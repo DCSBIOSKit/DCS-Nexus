@@ -1,6 +1,12 @@
 import threading
+from tkinter import *
+from tkinter import ttk
+
+slave_dict = {}  # Dictionary to store slave addresses and IDs
 
 def master_loop():
+    from .slave import Slave, slaves
+    from .interface import root, tree
     from zeroconf import ServiceInfo, Zeroconf
     import socket
     import json
@@ -14,8 +20,6 @@ def master_loop():
         ip_address = s.getsockname()[0]
         s.close()
         return ip_address
-
-    slave_dict = {}  # Dictionary to store slave addresses and IDs
 
     IP_ADDRESS = "0.0.0.0"
     UDP_PORT = 5010
@@ -82,6 +86,14 @@ def master_loop():
                         message = json.dumps({'message': 'Hello, World'})
                         slave_socket.sendto(message.encode(), slave_addr)
                         print(f"Received connection from {slave_id} at address {slave_addr}")
+
+                        # Register Slave
+                        slave = Slave(slave_id, "Unknown", slave_addr)
+                        # Append slave in a thread safe manner
+                        root.after(0, lambda:
+                            slaves.append(slave),
+                            tree.insert('', END, values=(slave.id, slave.ip, slave.mac))
+                        )
             
             # Check for stale slaves
             current_time = int(time.time() * 1000)

@@ -2,7 +2,7 @@ import subprocess
 import pkg_resources
 
 def install_packages():
-    packages = ["ttkthemes", "zeroconf", "PyYAML"]
+    packages = ["zeroconf", "ttkthemes", "PyYAML", "rx"]
 
     installed = {pkg.key for pkg in pkg_resources.working_set}
     

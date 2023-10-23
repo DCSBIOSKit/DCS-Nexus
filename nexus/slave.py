@@ -1,46 +1,27 @@
-from random import randint
 from tkinter import *
+from typing import List
+from random import randint
+from rx.subject import Subject
 
-class Slave:
-    def __init__(self, id, ip, mac, observer):
-        self._observers = [observer]
+class ObservableObject:
+    observable_properties = []
+
+    def __setattr__(self, name, value):
+        super().__setattr__(name, value)
+        if hasattr(self, 'subject') and name in self.__class__.observable_properties:
+            self.subject.on_next(self)
+
+class Slave(ObservableObject):
+    observable_properties = ["id", "ip"]
+
+    def __init__(self, id, mac, ip="Unknown"):
+        # Required properties
         self.id = id
-        self.ip = ip
         self.mac = mac
+        self.subject = Subject()
 
-    @property
-    def id(self):
-        return self._id
-
-    @id.setter
-    def id(self, value):
-        self._id = value
-        self._notify_observers()
-
-    @property
-    def ip(self):
-        return self._ip
-
-    @ip.setter
-    def ip(self, value):
-        self._ip = value
-        self._notify_observers()
-
-    @property
-    def mac(self):
-        return self._mac
-
-    @mac.setter
-    def mac(self, value):
-        self._mac = value
-        self._notify_observers()
-
-    def add_observer(self, observer):
-        self._observers.append(observer)
-
-    def _notify_observers(self):
-        for observer in self._observers:
-            observer.update(self)
+        # Optional properties
+        self.ip = ip
     
     # Sample data
     def generate_sample_ip():
@@ -49,35 +30,15 @@ class Slave:
     def generate_sample_mac():
         return f"{randint(0x00, 0xFF):02X}:{randint(0x00, 0xFF):02X}:{randint(0x00, 0xFF):02X}:{randint(0x00, 0xFF):02X}:{randint(0x00, 0xFF):02X}:{randint(0x00, 0xFF):02X}"
     
-    def generate_sample_slave(observer):
-        return Slave(f"slave-{randint(0, 100)}", Slave.generate_sample_ip(), Slave.generate_sample_mac(), observer)
+    def generate_sample_slave():
+        return Slave(f"slave-{randint(0, 100)}", Slave.generate_sample_mac(), Slave.generate_sample_ip())
     
-    def generate_sample_slaves(observer):
+    def generate_sample_slaves():
         slaves = []
         
         for i in range(10):
-            slaves.append(Slave.generate_sample_slave(observer))
+            slaves.append(Slave.generate_sample_slave())
         
         return slaves
-    
-class SlaveListObserver:
-    def __init__(self, tree):
-        self.tree = tree
 
-    def update(self, slave_list):
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        for slave in slave_list:
-            self.tree.insert('', END, values=(slave.id, slave.ip, slave.mac))
-
-class SlaveObserver:
-    def __init__(self, tree):
-        self.tree = tree
-
-    def update(self, slave):
-        for item in self.tree.get_children():
-            if self.tree.item(item, "values")[0] == slave.id:
-                self.tree.item(item, values=(slave.id, slave.ip, slave.mac))
-                break
-
-slaves = [Slave]
+slaves: List[Slave] = []

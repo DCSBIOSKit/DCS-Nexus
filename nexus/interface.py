@@ -7,6 +7,7 @@ from .settings import *
 
 root = Tk()
 main_frame = ttk.Frame(root)
+tree = ttk.Treeview(main_frame, columns=('Identifier', 'IP', 'MAC'), show='headings')
 style = ttk.Style()
 
 def set_dpi_awareness():
@@ -33,6 +34,17 @@ def configure_window():
     
     main_frame.pack(fill=BOTH, expand=1)
 
+def update_tree(slave_instance):
+    for item in tree.get_children():
+        item_data = tree.item(item, 'values')  # This gives you a tuple of the values
+        mac_address = item_data[2]  # Assuming the MAC address is the third column
+
+        # Find the corresponding Slave object based on MAC address
+        corresponding_slave = next((s for s in slaves if s.mac == mac_address), None)
+
+        if corresponding_slave:
+            tree.item(item, values=(corresponding_slave.id, corresponding_slave.ip, corresponding_slave.mac))
+            
 def create_slave_list():
     def treeview_sort_column(tv, col, reverse):
         l = [(tv.set(k, col), k) for k in tv.get_children('')]
@@ -46,17 +58,14 @@ def create_slave_list():
         tv.heading(col, command=lambda: treeview_sort_column(tv, col, not reverse))
 
     # Create a Treeview widget
-    tree = ttk.Treeview(main_frame, columns=('Identifier', 'IP', 'MAC'), show='headings')
     tree.heading('Identifier', text='Identifier', command=lambda: treeview_sort_column(tree, 'Identifier', False))
     tree.heading('IP', text='IP', command=lambda: treeview_sort_column(tree, 'IP', False))
     tree.heading('MAC', text='MAC', command=lambda: treeview_sort_column(tree, 'MAC', False))
 
-    # Create observer instances
-    slave_list_observer = SlaveListObserver(tree)
-    slave_observer = SlaveObserver(tree)
-
-    slaves = Slave.generate_sample_slaves(slave_observer)
-    slave_list_observer.update(slaves)
+    slaves = Slave.generate_sample_slaves()
+    for slave in slaves:
+        tree.insert('', END, values=(slave.id, slave.ip, slave.mac))
+        slave.subject.subscribe(update_tree)
 
     def on_treeview_select(event):
         selected_item = tree.selection()[0]
@@ -82,10 +91,21 @@ def create_slave_list():
     ))
 
 def toggle_style():
+    global slaves
+    new_slave = Slave("New_Slave", "192.168.1.100", "00:1A:2B:3C:4D")
+    new_slave.subject.subscribe(update_tree)
+    slaves.append(new_slave)
+    tree.insert('', END, values=(new_slave.id, new_slave.ip, new_slave.mac))
+    new_slave.ip = "192.168.1.101"
+
     if style.theme_use() == 'breeze-dark':
         style.theme_use('breeze')
     else:
         style.theme_use('breeze-dark')
+
+def show_settings():
+    global slaves
+    slaves[0].id = "Updated_Slave"
 
 def create_bottom_toolbar():
     toolbar = ttk.Frame(root)
@@ -97,7 +117,7 @@ def create_bottom_toolbar():
     separator = ttk.Separator(toolbar)
     separator.pack(side=LEFT, expand=1)
 
-    settings_button = ttk.Button(toolbar, text="Settings")
+    settings_button = ttk.Button(toolbar, text="Settings", command=show_settings)
     settings_button.pack(side=LEFT, padx=2, pady=2)
 
 def center_window():
