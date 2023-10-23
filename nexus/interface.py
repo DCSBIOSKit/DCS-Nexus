@@ -7,7 +7,7 @@ from .settings import *
 
 root = Tk()
 main_frame = ttk.Frame(root)
-tree = ttk.Treeview(main_frame, columns=('Identifier', 'IP', 'MAC', 'RSSI', 'CPU', 'Free Memory'), show='headings')
+tree = ttk.Treeview(main_frame, columns=('Identifier', 'IP', 'MAC', 'RSSI', 'Loop Time', 'Free Memory', 'CPU', 'Flash Size'), show='headings')
 style = ttk.Style()
 
 def set_dpi_awareness():
@@ -32,8 +32,6 @@ def configure_window():
     main_frame.pack(fill=BOTH, expand=1)
 
 def update_tree(slave):
-    print(f"Updating tree for {slave.mac}")
-
     for item in tree.get_children():
         item_data = tree.item(item, 'values')  # This gives you a tuple of the values
         mac_address = item_data[2]  # Assuming the MAC address is the third column
@@ -42,7 +40,7 @@ def update_tree(slave):
         slave = next((s for s in slaves if s.mac == mac_address), None)
 
         if slave:
-            tree.item(item, values=(slave.id, slave.ip, slave.mac, slave.rssi, slave.cpu_freq, slave.free_heap))
+            tree.item(item, values=slave.tree_values())
             
 def create_slave_list():
     def treeview_sort_column(tv, col, reverse):
@@ -61,8 +59,10 @@ def create_slave_list():
     tree.heading('IP', text='IP', command=lambda: treeview_sort_column(tree, 'IP', False))
     tree.heading('MAC', text='MAC', command=lambda: treeview_sort_column(tree, 'MAC', False))
     tree.heading('RSSI', text='RSSI', command=lambda: treeview_sort_column(tree, 'RSSI', False))
-    tree.heading('CPU', text='CPU', command=lambda: treeview_sort_column(tree, 'CPU', False))
+    tree.heading('Loop Time', text='Loop Time', command=lambda: treeview_sort_column(tree, 'Loop Time', False))
     tree.heading('Free Memory', text='Free Memory', command=lambda: treeview_sort_column(tree, 'Free Memory', False))
+    tree.heading('CPU', text='CPU', command=lambda: treeview_sort_column(tree, 'CPU', False))
+    tree.heading('Flash Size', text='Flash Size', command=lambda: treeview_sort_column(tree, 'Flash Size', False))
 
     """ slaves = Slave.generate_sample_slaves()
     for slave in slaves:

@@ -26,21 +26,61 @@ class Slave(ObservableObject):
         self.ip = ip
         self.port = port
         self.rssi = 0
-        self.cpu_freq = 0
+        self.loop_duration = 0
         self.free_heap = 0
+        self.cpu_freq = 0
+        self.flash_size = 0
+
+        self.loop_durations = []
+        self.max_samples = 10
+        self.min_duration = float('inf')
+        self.max_duration = 0
+        self.avg_duration = 0
+
+    def update_loop_duration(self):
+        self.loop_durations.append(self.loop_duration)
+
+        if len(self.loop_durations) > self.max_samples:
+            self.loop_durations.pop(0)
+
+        self.min_duration = min(self.loop_durations)
+        self.max_duration = max(self.loop_durations)
+        self.avg_duration = sum(self.loop_durations) / len(self.loop_durations)
 
     def addr(self):
         return (self.ip, self.port)
     
     def update_from_json(self, json_dict):
         self.__dict__.update(json_dict)
+        self.update_loop_duration()
 
+    def rssi_to_text_bar(self, max_length=10):
+        rssi_percent = 100 + self.rssi if self.rssi <= 0 else 100
+        filled_length = int(max_length * rssi_percent // 100)
+        bar = '█' * filled_length + '' * (max_length - filled_length)
+        return f"{rssi_percent}% {bar}"
+    
+    def rssi_to_percent(self):
+        rssi_percent = 100 + self.rssi if self.rssi <= 0 else 100
+        return f"{rssi_percent}%"
+    
+    def loop_duration_string(self):
+        return f"{self.avg_duration/1000:.2f} ms ({self.min_duration/1000:.2f} - {self.max_duration/1000:.2f})"
+
+    def tree_values(self):
+        rssi_percent = 100 + self.rssi if self.rssi <= 0 else 100
+        free_heap_kB = self.free_heap / 1024
+        loop_duration_ms = self.loop_duration / 1000
+        flash_size_mb = self.flash_size / 1024 / 1024
+
+        return (self.id, self.ip, self.mac, f"{self.rssi_to_text_bar()}", f"{self.loop_duration_string()} ms", f"{free_heap_kB:.1f} kB", f"{self.cpu_freq} MHz", f"{flash_size_mb} MB")
+    
     # Add and remove
     def add_slave(self):
         from .interface import tree, update_tree
 
         slaves.append(self)
-        tree.insert('', END, values=(self.id, self.ip, self.mac, self.rssi, self.cpu_freq, self.free_heap))
+        tree.insert('', END, values=self.tree_values())
 
     def remove_slave(self):
         from .interface import tree
