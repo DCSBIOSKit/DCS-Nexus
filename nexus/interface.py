@@ -2,6 +2,8 @@ import os
 import platform
 from tkinter import *
 from tkinter import ttk
+from .slave import *
+from .settings import *
 
 root = Tk()
 main_frame = ttk.Frame(root)
@@ -49,9 +51,21 @@ def create_slave_list():
     tree.heading('IP', text='IP', command=lambda: treeview_sort_column(tree, 'IP', False))
     tree.heading('MAC', text='MAC', command=lambda: treeview_sort_column(tree, 'MAC', False))
 
-    # Add some sample data
-    for i in range(50):
-        tree.insert('', END, values=(f'slave-{i+1}', f'10.0.0.{i+20}', f'00:01:02:03:04:05:06:07'))
+    # Create observer instances
+    slave_list_observer = SlaveListObserver(tree)
+    slave_observer = SlaveObserver(tree)
+
+    slaves = Slave.generate_sample_slaves(slave_observer)
+    slave_list_observer.update(slaves)
+
+    def on_treeview_select(event):
+        selected_item = tree.selection()[0]
+        selected_values = tree.item(selected_item)['values']
+        selected_mac = selected_values[2]
+        selected_slave = next((slave for slave in slaves if slave.mac == selected_mac), None)
+        print(f"Selected slave: {selected_slave.mac}")
+    
+    tree.bind('<<TreeviewSelect>>', on_treeview_select)
 
     # Create a scrollbar
     scrollbar = ttk.Scrollbar(main_frame, orient=VERTICAL, command=tree.yview)
@@ -60,6 +74,12 @@ def create_slave_list():
     # Pack the Treeview and Scrollbar
     scrollbar.pack(side=RIGHT, fill=Y)
     tree.pack(side=LEFT, fill=BOTH, expand=1)
+
+    # Bind CMD+Q to save settings and quit
+    root.createcommand("::tk::mac::Quit", lambda: (
+        save_settings(),
+        root.destroy()
+    ))
 
 def toggle_style():
     if style.theme_use() == 'breeze-dark':
@@ -80,11 +100,23 @@ def create_bottom_toolbar():
     settings_button = ttk.Button(toolbar, text="Settings")
     settings_button.pack(side=LEFT, padx=2, pady=2)
 
+def center_window():
+    root.update_idletasks()
+    width = root.winfo_width()
+    height = root.winfo_height()
+    x = (root.winfo_screenwidth() // 2) - (width // 2)
+    y = (root.winfo_screenheight() // 2) - (height // 2)
+    root.geometry(f'{width}x{height}+{x}+{y}')
+
 def create_interface():
     set_dpi_awareness()
     import_themes()
     configure_window()
     create_slave_list()
     create_bottom_toolbar()
+    center_window()
+    load_settings()
     
+    root.protocol("WM_DELETE_WINDOW", lambda: (save_settings(), root.destroy()))
+
     root.mainloop()
