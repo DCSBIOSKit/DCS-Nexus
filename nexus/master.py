@@ -75,8 +75,8 @@ def master_loop():
                     else:
                         data = command.get('data', None)
 
-                    print(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave_addr}")
-
+                    print(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave_addr} rssi {slave_data['rssi']}")
+                    
                     # Check if slave is already registered, otherwise add it
                     slave = Slave.find_slave_by_mac(slave_data['mac'])
                     if not slave:

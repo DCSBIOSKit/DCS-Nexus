@@ -7,7 +7,7 @@ from .settings import *
 
 root = Tk()
 main_frame = ttk.Frame(root)
-tree = ttk.Treeview(main_frame, columns=('Identifier', 'IP', 'MAC'), show='headings')
+tree = ttk.Treeview(main_frame, columns=('Identifier', 'IP', 'MAC', 'RSSI', 'CPU', 'Free Memory'), show='headings')
 style = ttk.Style()
 
 def set_dpi_awareness():
@@ -17,11 +17,8 @@ def set_dpi_awareness():
 
 def import_themes():
     current_directory = os.getcwd()
-
-    # Form the full path
     full_path = os.path.join(current_directory, 'assets/tkBreeze-master')
 
-    # Now use full_path in your tk.call
     root.tk.call('lappend', 'auto_path', full_path)
     root.tk.call('package', 'require', 'ttk::theme::breeze')
     root.tk.call('package', 'require', 'ttk::theme::breeze-dark')
@@ -34,16 +31,18 @@ def configure_window():
     
     main_frame.pack(fill=BOTH, expand=1)
 
-def update_tree(slave_instance):
+def update_tree(slave):
+    print(f"Updating tree for {slave.mac}")
+
     for item in tree.get_children():
         item_data = tree.item(item, 'values')  # This gives you a tuple of the values
         mac_address = item_data[2]  # Assuming the MAC address is the third column
 
         # Find the corresponding Slave object based on MAC address
-        corresponding_slave = next((s for s in slaves if s.mac == mac_address), None)
+        slave = next((s for s in slaves if s.mac == mac_address), None)
 
-        if corresponding_slave:
-            tree.item(item, values=(corresponding_slave.id, corresponding_slave.ip, corresponding_slave.mac))
+        if slave:
+            tree.item(item, values=(slave.id, slave.ip, slave.mac, slave.rssi, slave.cpu_freq, slave.free_heap))
             
 def create_slave_list():
     def treeview_sort_column(tv, col, reverse):
@@ -61,6 +60,9 @@ def create_slave_list():
     tree.heading('Identifier', text='Identifier', command=lambda: treeview_sort_column(tree, 'Identifier', False))
     tree.heading('IP', text='IP', command=lambda: treeview_sort_column(tree, 'IP', False))
     tree.heading('MAC', text='MAC', command=lambda: treeview_sort_column(tree, 'MAC', False))
+    tree.heading('RSSI', text='RSSI', command=lambda: treeview_sort_column(tree, 'RSSI', False))
+    tree.heading('CPU', text='CPU', command=lambda: treeview_sort_column(tree, 'CPU', False))
+    tree.heading('Free Memory', text='Free Memory', command=lambda: treeview_sort_column(tree, 'Free Memory', False))
 
     """ slaves = Slave.generate_sample_slaves()
     for slave in slaves:

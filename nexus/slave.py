@@ -5,23 +5,22 @@ from random import randint
 from rx.subject import Subject
 
 class ObservableObject:
-    observable_properties = []
-
     def __setattr__(self, name, value):
         super().__setattr__(name, value)
-        if hasattr(self, 'subject') and name in self.__class__.observable_properties:
+        if hasattr(self, 'subject'):
             self.subject.on_next(self)
 
 class Slave(ObservableObject):
-    observable_properties = ["id", "ip"]
-
     def __init__(self, id, mac, ip="Unknown", port=7779):
+        from .interface import tree, update_tree
+
         # Required properties
         self.id = id
         self.mac = mac
         self.last_received = time.time() * 1000
         self.last_sent = time.time() * 1000
         self.subject = Subject()
+        self.subject.subscribe(update_tree)
 
         # Optional properties
         self.ip = ip
@@ -38,10 +37,10 @@ class Slave(ObservableObject):
 
     # Add and remove
     def add_slave(self):
-        from .interface import tree
+        from .interface import tree, update_tree
 
         slaves.append(self)
-        tree.insert('', END, values=(self.id, self.ip, self.mac))
+        tree.insert('', END, values=(self.id, self.ip, self.mac, self.rssi, self.cpu_freq, self.free_heap))
 
     def remove_slave(self):
         from .interface import tree
