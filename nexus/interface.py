@@ -5,7 +5,7 @@ from tkinter import ttk
 
 root = Tk()
 main_frame = ttk.Frame(root)
-s = ttk.Style()
+style = ttk.Style()
 
 def set_dpi_awareness():
     if platform.system() == 'Windows':
@@ -27,7 +27,7 @@ def import_themes():
 def configure_window():
     root.title("Nexus")
     
-    s.theme_use('breeze-dark')
+    style.theme_use('breeze-dark')
     
     main_frame.pack(fill=BOTH, expand=1)
 
@@ -62,23 +62,23 @@ def create_slave_list():
     tree.pack(side=LEFT, fill=BOTH, expand=1)
 
 def toggle_style():
-    if s.theme_use() == 'breeze-dark':
-        s.theme_use('breeze')
+    if style.theme_use() == 'breeze-dark':
+        style.theme_use('breeze')
     else:
-        s.theme_use('breeze-dark')
+        style.theme_use('breeze-dark')
 
 def create_bottom_toolbar():
     toolbar = ttk.Frame(root)
     toolbar.pack(side=BOTTOM, fill=X)
 
-    button1 = ttk.Button(toolbar, text="Appearance", command=toggle_style)
-    button1.pack(side=LEFT, padx=2, pady=2)
+    appearance_button = ttk.Button(toolbar, text="Appearance", command=toggle_style)
+    appearance_button.pack(side=LEFT, padx=2, pady=2)
 
     separator = ttk.Separator(toolbar)
     separator.pack(side=LEFT, expand=1)
 
-    button2 = ttk.Button(toolbar, text="Button 2")
-    button2.pack(side=LEFT, padx=2, pady=2)
+    settings_button = ttk.Button(toolbar, text="Settings")
+    settings_button.pack(side=LEFT, padx=2, pady=2)
 
 def create_interface():
     set_dpi_awareness()
