@@ -59,7 +59,7 @@ def master_loop():
                     
                     for slave in slaves:
                         encoded_data = base64.b64encode(dcs_data).decode()
-                        message = json.dumps({'message': encoded_data})
+                        message = json.dumps({'type': 'message', 'data': encoded_data})
                         slave_socket.sendto(message.encode(), slave.addr())
                         print(f"Sent {message} to {slave.id} at address {slave.addr()}")
 

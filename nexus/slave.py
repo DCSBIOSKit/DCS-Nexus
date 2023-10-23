@@ -31,7 +31,7 @@ class Slave(ObservableObject):
         self.cpu_freq = 0
         self.flash_size = 0
 
-        self.loop_durations = []
+        self.loop_durations = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.max_samples = 10
         self.min_duration = float('inf')
         self.max_duration = 0
