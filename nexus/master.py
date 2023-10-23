@@ -2,8 +2,6 @@ import threading
 from tkinter import *
 from tkinter import ttk
 
-slave_dict = {}  # Dictionary to store slave addresses and IDs
-
 def master_loop():
     from .slave import Slave, slaves
     from .interface import root, tree
@@ -59,50 +57,57 @@ def master_loop():
                 if s is dcs_socket:
                     dcs_data, _ = dcs_socket.recvfrom(BUFFER_SIZE)
                     
-                    for slave_addr in slave_dict.keys():
+                    for slave in slaves:
                         encoded_data = base64.b64encode(dcs_data).decode()
                         message = json.dumps({'message': encoded_data})
-                        slave_socket.sendto(message.encode(), slave_addr)
-                        print(f"Sent {message} to {slave_dict[slave_addr]['id']} at address {slave_addr}")
+                        slave_socket.sendto(message.encode(), slave.addr())
+                        print(f"Sent {message} to {slave.id} at address {slave.addr()}")
 
                 elif s is slave_socket:
-                    data, slave_addr = slave_socket.recvfrom(BUFFER_SIZE)
-                    parsed_data = json.loads(data.decode())
-                    message_base64 = parsed_data.get('message', None)
-                    slave_id = parsed_data.get('id', 'Unknown')
+                    raw_data, slave_addr = slave_socket.recvfrom(BUFFER_SIZE)
+                    command = json.loads(raw_data.decode())
+                    
+                    type = command.get('type', None)
+                    slave_data = command.get('slave', None)
 
-                    if message_base64:
-                        decoded_data = base64.b64decode(message_base64)
-                        dcs_socket.sendto(decoded_data, ('localhost', 7778))
-                        print(f"Forwarded message to DCS-BIOS: {decoded_data}")
+                    if type == "message":
+                        data = base64.b64decode(command.get('data', None))
+                    else:
+                        data = command.get('data', None)
 
-                    keep_alive = parsed_data.get('keep-alive', None)
-                    if keep_alive:
-                        slave_dict[slave_addr] = {'id': slave_id, 'last_received': int(time.time() * 1000)}
-                        print(f"Received keep-alive from {keep_alive} at address {slave_addr}")
+                    print(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave_addr}")
 
-                    if slave_addr not in slave_dict:
-                        slave_dict[slave_addr] = {'id': slave_id, 'last_received': int(time.time() * 1000)}
-                        message = json.dumps({'message': 'Hello, World'})
-                        slave_socket.sendto(message.encode(), slave_addr)
-                        print(f"Received connection from {slave_id} at address {slave_addr}")
+                    # Check if slave is already registered, otherwise add it
+                    slave = Slave.find_slave_by_mac(slave_data['mac'])
+                    if not slave:
+                        slave = Slave(slave_data['id'], slave_data['mac'], slave_addr[0], slave_addr[1])
+                        slave.update_from_json(slave_data)
+                        slave.add_slave()
+                    else:
+                        slave.update_from_json(slave_data)
 
-                        # Register Slave
-                        slave = Slave(slave_id, "Unknown", slave_addr)
-                        # Append slave in a thread safe manner
-                        root.after(0, lambda:
-                            slaves.append(slave),
-                            tree.insert('', END, values=(slave.id, slave.ip, slave.mac))
-                        )
+                    slave.last_received = int(time.time() * 1000)
             
             # Check for stale slaves
             current_time = int(time.time() * 1000)
-            stale_slave_keys = [slave_addr for slave_addr, slave_info in slave_dict.items()
-                                if current_time - slave_info['last_received'] > 2000]
-            
-            for key in stale_slave_keys:
-                print(f"Removing stale slave {slave_dict[key]['id']} at address {key}")
-                del slave_dict[key]
+
+            # Find stale slaves
+            stale_slaves = [slave for slave in slaves if current_time - slave.last_received > 3000]
+
+            # Remove stale slaves and log their removal
+            for stale_slave in stale_slaves:
+                print(f"Removing stale slave {stale_slave.id} with MAC address {stale_slave.mac}")
+                stale_slave.remove_slave()
+
+            # Send keep-alive to all slaves
+            message = json.dumps({"type": "check-in"})
+            current_time = time.time() * 1000
+
+            for slave in slaves:
+                if current_time - slave.last_sent >= 1000:
+                    slave_socket.sendto(message.encode(), slave.addr())
+                    slave.last_sent = current_time
+                    print(f"Sent keep-alive to {slave.id} at address {slave.addr()}")
             
     except KeyboardInterrupt:
         print("Kthxbai")
