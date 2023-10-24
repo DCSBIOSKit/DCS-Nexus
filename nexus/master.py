@@ -164,7 +164,7 @@ def slave_loop():
 
                         slave.last_received = int(time.time() * 1000)
                     except:
-                        print(f"Failed to receive data from {s.getpeername()}")
+                        print(f"Failed to receive data from {slave_addr}")
 
         # Check for stale slaves
         current_time = int(time.time() * 1000)
