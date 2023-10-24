@@ -7,6 +7,7 @@ UDP_PORT = 5010
 BUFFER_SIZE = 4096
 GROUP = "239.255.50.10"
 SLAVE_PORT = 7779
+SLAVE_SOCKET_PROTOCOL = "UDP"
 
 def dcs_loop():
     from .slave import Slave, slaves
@@ -37,8 +38,8 @@ def dcs_loop():
     ip_address = get_ip_address()
 
     info = ServiceInfo(
-        "_dcs-bios._tcp.local.",
-        "DCS-BIOS Service._dcs-bios._tcp.local.",
+        "_dcs-bios._tcp.local." if SLAVE_SOCKET_PROTOCOL == "TCP" else "_dcs-bios._udp.local.",
+        "DCS-BIOS Service._dcs-bios._tcp.local." if SLAVE_SOCKET_PROTOCOL == "TCP" else "DCS-BIOS Service._dcs-bios._udp.local.",
         addresses=[socket.inet_aton(ip_address)],
         port=SLAVE_PORT,
     )
@@ -54,7 +55,7 @@ def dcs_loop():
             for slave in slaves:
                 encoded_data = base64.b64encode(dcs_data).decode()
                 message = json.dumps({'type': 'message', 'data': encoded_data})
-                bytes = slave.sock.send(message.encode(), socket.MSG_OOB)
+                bytes = slave.sock.send(message.encode(), socket.MSG_OOB) if SLAVE_SOCKET_PROTOCOL == 'TCP' else slave.sock.sendto(message.encode(), (slave.ip, SLAVE_PORT))
                 print(f"Sent {bytes} {message} to {slave.id} at address {slave.addr()}")
     except KeyboardInterrupt:
         print("Kthxbai")
@@ -72,56 +73,98 @@ def slave_loop():
     import select
     import time
 
-    slave_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    slave_socket.bind((IP_ADDRESS, SLAVE_PORT))
-    slave_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-    slave_socket.setsockopt(socket.IPPROTO_TCP, socket.IP_TOS, 0x10)
-    slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
-    slave_socket.listen(5)
+    if SLAVE_SOCKET_PROTOCOL == 'TCP':
+        slave_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        slave_socket.bind((IP_ADDRESS, SLAVE_PORT))
+        slave_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        slave_socket.setsockopt(socket.IPPROTO_TCP, socket.IP_TOS, 0x10)
+        slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
+        slave_socket.listen(5)
+    else:
+        slave_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        slave_socket.bind((IP_ADDRESS, SLAVE_PORT))
+        slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
 
     slave_sockets = []
 
     while True:
         # Create a list of sockets to monitor
-        readable_sockets, _, _ = select.select([slave_socket] + slave_sockets, [], [], 0.1)
-        
-        for s in readable_sockets:
-            if s is slave_socket:
-                conn, addr = s.accept()
-                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                s.setsockopt(socket.IPPROTO_TCP, socket.IP_TOS, 0x10)
-                s.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
-                slave_sockets.append(conn)
+        if SLAVE_SOCKET_PROTOCOL == 'TCP':
+            readable_sockets, _, _ = select.select([slave_socket] + slave_sockets, [], [], 0.1)
+            
+            for s in readable_sockets:
+                if s is slave_socket:
+                    if SLAVE_SOCKET_PROTOCOL == 'TCP':
+                        conn, addr = s.accept()
+                        s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                        s.setsockopt(socket.IPPROTO_TCP, socket.IP_TOS, 0x10)
+                        s.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
+                        slave_sockets.append(conn)
+                else:
+                    try:
+                        raw_data = s.recv(BUFFER_SIZE)
 
-            else:
-                try:
-                    raw_data = s.recv(BUFFER_SIZE)
-
-                    command = json.loads(raw_data.decode())
-                
-                    type = command.get('type', None)
-                    slave_data = command.get('slave', None)
-
-                    # Check if slave is already registered, otherwise add it
-                    slave = Slave.find_slave_by_mac(slave_data['mac'])
-                    if not slave:
-                        ip, port = s.getpeername()
-                        slave = Slave(slave_data['id'], slave_data['mac'], ip, port, s)
-                        slave.update_from_json(slave_data)
-                        slave.add_slave()
-
-                    if type == "message":
-                        data = base64.b64decode(command.get('data', None))
-                    else:
-                        data = command.get('data', None)
-
-                    print(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
+                        command = json.loads(raw_data.decode())
                     
-                    slave.update_from_json(slave_data)
+                        type = command.get('type', None)
+                        slave_data = command.get('slave', None)
 
-                    slave.last_received = int(time.time() * 1000)
-                except:
-                    print(f"Failed to receive data from {s.getpeername()}")
+                        # Check if slave is already registered, otherwise add it
+                        slave = Slave.find_slave_by_mac(slave_data['mac'])
+                        if not slave:
+                            ip, port = s.getpeername()
+                            slave = Slave(slave_data['id'], slave_data['mac'], ip, port, s)
+                            slave.update_from_json(slave_data)
+                            slave.add_slave()
+
+                        if type == "message":
+                            data = base64.b64decode(command.get('data', None))
+                        else:
+                            data = command.get('data', None)
+
+                        print(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
+                        
+                        slave.update_from_json(slave_data)
+
+                        slave.last_received = int(time.time() * 1000)
+                    except:
+                        print(f"Failed to receive data from {s.getpeername()}")
+        else:
+            readable_sockets, _, _ = select.select([slave_socket], [], [], 0.1)
+            
+            for s in readable_sockets:
+                if s is slave_socket:
+                    try:
+                        raw_data, slave_addr = slave_socket.recvfrom(BUFFER_SIZE)
+
+                        command = json.loads(raw_data.decode())
+                            
+                        type = command.get('type', None)
+                        slave_data = command.get('slave', None)
+
+                        # Check if slave is already registered, otherwise add it
+                        slave = Slave.find_slave_by_mac(slave_data['mac'])
+                        if not slave:
+                            if SLAVE_SOCKET_PROTOCOL == 'TCP':
+                                ip, port = s.getpeername()
+                            else:
+                                ip, port = slave_addr
+                            slave = Slave(slave_data['id'], slave_data['mac'], ip, port, s)
+                            slave.update_from_json(slave_data)
+                            slave.add_slave()
+
+                        if type == "message":
+                            data = base64.b64decode(command.get('data', None))
+                        else:
+                            data = command.get('data', None)
+
+                        print(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
+                        
+                        slave.update_from_json(slave_data)
+
+                        slave.last_received = int(time.time() * 1000)
+                    except:
+                        print(f"Failed to receive data from {s.getpeername()}")
 
         # Check for stale slaves
         current_time = int(time.time() * 1000)
@@ -132,7 +175,8 @@ def slave_loop():
         # Remove stale slaves and log their removal
         for stale_slave in stale_slaves:
             print(f"Removing stale slave {stale_slave.id} with MAC address {stale_slave.mac} ({slave_sockets.count} remaining)")
-            slave_sockets.remove(stale_slave.sock)
+            if slave_socket in slave_sockets:
+                slave_sockets.remove(stale_slave.sock)
             stale_slave.remove_slave()
 
         # Send keep-alive to all slaves
@@ -141,7 +185,7 @@ def slave_loop():
 
         for slave in slaves:
             if current_time - slave.last_sent >= 1000:
-                slave.sock.send(message.encode())
+                slave.sock.send(message.encode()) if SLAVE_SOCKET_PROTOCOL == 'TCP' else slave.sock.sendto(message.encode(), (slave.ip, SLAVE_PORT))
                 slave.last_sent = current_time
                 print(f"Sent keep-alive to {slave.id} at address {slave.ip}")
 
