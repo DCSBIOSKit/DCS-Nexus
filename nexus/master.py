@@ -2,7 +2,13 @@ import threading
 from tkinter import *
 from tkinter import ttk
 
-def master_loop():
+IP_ADDRESS = "0.0.0.0"
+UDP_PORT = 5010
+BUFFER_SIZE = 4096
+GROUP = "239.255.50.10"
+SLAVE_PORT = 7779
+
+def dcs_loop():
     from .slave import Slave, slaves
     from .interface import root, tree
     from zeroconf import ServiceInfo, Zeroconf
@@ -19,11 +25,6 @@ def master_loop():
         s.close()
         return ip_address
 
-    IP_ADDRESS = "0.0.0.0"
-    UDP_PORT = 5010
-    BUFFER_SIZE = 4096
-    GROUP = "239.255.50.10"
-
     try:
         dcs_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         dcs_socket.bind((IP_ADDRESS, UDP_PORT))
@@ -35,7 +36,6 @@ def master_loop():
     zeroconf = Zeroconf()
     ip_address = get_ip_address()
 
-    SLAVE_PORT = 7779
     info = ServiceInfo(
         "_dcs-bios._tcp.local.",
         "DCS-BIOS Service._dcs-bios._tcp.local.",
@@ -44,7 +44,34 @@ def master_loop():
     )
 
     zeroconf.register_service(info)
-    
+
+    print(f"Listening for connections on {ip_address}:{SLAVE_PORT}")
+
+    try:
+        while True:
+            dcs_data, _ = dcs_socket.recvfrom(BUFFER_SIZE)
+                        
+            for slave in slaves:
+                encoded_data = base64.b64encode(dcs_data).decode()
+                message = json.dumps({'type': 'message', 'data': encoded_data})
+                bytes = slave.sock.send(message.encode(), socket.MSG_OOB)
+                print(f"Sent {bytes} {message} to {slave.id} at address {slave.addr()}")
+    except KeyboardInterrupt:
+        print("Kthxbai")
+    finally:
+        zeroconf.unregister_service(info)
+        zeroconf.close()
+
+def slave_loop():
+    from .slave import Slave, slaves
+    from .interface import root, tree
+    from zeroconf import ServiceInfo, Zeroconf
+    import socket
+    import json
+    import base64
+    import select
+    import time
+
     slave_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     slave_socket.bind((IP_ADDRESS, SLAVE_PORT))
     slave_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -52,89 +79,74 @@ def master_loop():
     slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
     slave_socket.listen(5)
 
-    print(f"Listening for connections on {ip_address}:{SLAVE_PORT}")
+    slave_sockets = []
 
-    try:
-        slave_sockets = []
+    while True:
+        # Create a list of sockets to monitor
+        readable_sockets, _, _ = select.select([slave_socket] + slave_sockets, [], [], 0.1)
+        
+        for s in readable_sockets:
+            if s is slave_socket:
+                conn, addr = s.accept()
+                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                s.setsockopt(socket.IPPROTO_TCP, socket.IP_TOS, 0x10)
+                s.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
+                slave_sockets.append(conn)
 
-        while True:
-            # Create a list of sockets to monitor
-            readable_sockets, _, _ = select.select([dcs_socket, slave_socket] + slave_sockets, [], [], 0.1)
-            
-            for s in readable_sockets:
-                if s is dcs_socket:
-                    dcs_data, _ = dcs_socket.recvfrom(BUFFER_SIZE)
-                    
-                    for slave in slaves:
-                        encoded_data = base64.b64encode(dcs_data).decode()
-                        message = json.dumps({'type': 'message', 'data': encoded_data})
-                        bytes = slave.sock.send(message.encode(), socket.MSG_OOB)
-                        print(f"Sent {bytes} {message} to {slave.id} at address {slave.addr()}")
+            else:
+                try:
+                    raw_data = s.recv(BUFFER_SIZE)
 
-                elif s is slave_socket:
-                    conn, addr = s.accept()
-                    s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                    s.setsockopt(socket.IPPROTO_TCP, socket.IP_TOS, 0x10)
-                    s.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
-                    slave_sockets.append(conn)
+                    command = json.loads(raw_data.decode())
+                
+                    type = command.get('type', None)
+                    slave_data = command.get('slave', None)
 
-                else:
-                    try:
-                        raw_data = s.recv(BUFFER_SIZE)
-
-                        command = json.loads(raw_data.decode())
-                    
-                        type = command.get('type', None)
-                        slave_data = command.get('slave', None)
-
-                        # Check if slave is already registered, otherwise add it
-                        slave = Slave.find_slave_by_mac(slave_data['mac'])
-                        if not slave:
-                            ip, port = s.getpeername()
-                            slave = Slave(slave_data['id'], slave_data['mac'], ip, port, s)
-                            slave.update_from_json(slave_data)
-                            slave.add_slave()
-
-                        if type == "message":
-                            data = base64.b64decode(command.get('data', None))
-                        else:
-                            data = command.get('data', None)
-
-                        print(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
-                        
+                    # Check if slave is already registered, otherwise add it
+                    slave = Slave.find_slave_by_mac(slave_data['mac'])
+                    if not slave:
+                        ip, port = s.getpeername()
+                        slave = Slave(slave_data['id'], slave_data['mac'], ip, port, s)
                         slave.update_from_json(slave_data)
+                        slave.add_slave()
 
-                        slave.last_received = int(time.time() * 1000)
-                    except:
-                        print(f"Failed to receive data from {s.getpeername()}")
+                    if type == "message":
+                        data = base64.b64decode(command.get('data', None))
+                    else:
+                        data = command.get('data', None)
 
-            # Check for stale slaves
-            current_time = int(time.time() * 1000)
+                    print(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
+                    
+                    slave.update_from_json(slave_data)
 
-            # Find stale slaves
-            stale_slaves = [slave for slave in slaves if current_time - slave.last_received > 3000]
+                    slave.last_received = int(time.time() * 1000)
+                except:
+                    print(f"Failed to receive data from {s.getpeername()}")
 
-            # Remove stale slaves and log their removal
-            for stale_slave in stale_slaves:
-                print(f"Removing stale slave {stale_slave.id} with MAC address {stale_slave.mac} ({slave_sockets.count} remaining)")
-                slave_sockets.remove(stale_slave.sock)
-                stale_slave.remove_slave()
+        # Check for stale slaves
+        current_time = int(time.time() * 1000)
 
-            # Send keep-alive to all slaves
-            message = json.dumps({"type": "check-in"})
-            current_time = time.time() * 1000
+        # Find stale slaves
+        stale_slaves = [slave for slave in slaves if current_time - slave.last_received > 3000]
 
-            for slave in slaves:
-                if current_time - slave.last_sent >= 1000:
-                    slave.sock.send(message.encode())
-                    slave.last_sent = current_time
-                    print(f"Sent keep-alive to {slave.id} at address {slave.ip}")
-            
-    except KeyboardInterrupt:
-        print("Kthxbai")
-    finally:
-        zeroconf.unregister_service(info)
-        zeroconf.close()
+        # Remove stale slaves and log their removal
+        for stale_slave in stale_slaves:
+            print(f"Removing stale slave {stale_slave.id} with MAC address {stale_slave.mac} ({slave_sockets.count} remaining)")
+            slave_sockets.remove(stale_slave.sock)
+            stale_slave.remove_slave()
 
-thread = threading.Thread(target=master_loop, daemon=True)
-thread.start()
+        # Send keep-alive to all slaves
+        message = json.dumps({"type": "check-in"})
+        current_time = time.time() * 1000
+
+        for slave in slaves:
+            if current_time - slave.last_sent >= 1000:
+                slave.sock.send(message.encode())
+                slave.last_sent = current_time
+                print(f"Sent keep-alive to {slave.id} at address {slave.ip}")
+
+slave_thread = threading.Thread(target=slave_loop, daemon=True)
+slave_thread.start()
+
+dcs_thread = threading.Thread(target=dcs_loop, daemon=True)
+dcs_thread.start()
