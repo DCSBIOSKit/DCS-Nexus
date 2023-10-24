@@ -47,6 +47,9 @@ def master_loop():
     
     slave_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     slave_socket.bind((IP_ADDRESS, SLAVE_PORT))
+    slave_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+    slave_socket.setsockopt(socket.IPPROTO_TCP, socket.IP_TOS, 0x10)
+    slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
     slave_socket.listen(5)
 
     print(f"Listening for connections on {ip_address}:{SLAVE_PORT}")
@@ -65,11 +68,14 @@ def master_loop():
                     for slave in slaves:
                         encoded_data = base64.b64encode(dcs_data).decode()
                         message = json.dumps({'type': 'message', 'data': encoded_data})
-                        slave.sock.send(message.encode())
-                        print(f"Sent {message} to {slave.id} at address {slave.addr()}")
+                        bytes = slave.sock.send(message.encode(), socket.MSG_OOB)
+                        print(f"Sent {bytes} {message} to {slave.id} at address {slave.addr()}")
 
                 elif s is slave_socket:
                     conn, addr = s.accept()
+                    s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                    s.setsockopt(socket.IPPROTO_TCP, socket.IP_TOS, 0x10)
+                    s.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
                     slave_sockets.append(conn)
 
                 else:
