@@ -1,4 +1,5 @@
 import time
+import socket
 from tkinter import *
 from typing import List
 from random import randint
@@ -11,7 +12,9 @@ class ObservableObject:
             self.subject.on_next(self)
 
 class Slave(ObservableObject):
-    def __init__(self, id, mac, ip="Unknown", port=7779):
+    sock: socket.socket
+
+    def __init__(self, id, mac, ip="Unknown", port=7779, socket=None):
         from .interface import tree, update_tree
 
         # Required properties
@@ -23,6 +26,7 @@ class Slave(ObservableObject):
         self.subject.subscribe(update_tree)
 
         # Optional properties
+        self.sock = socket
         self.ip = ip
         self.port = port
         self.rssi = 0
