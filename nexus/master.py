@@ -9,7 +9,11 @@ GROUP = "239.255.50.10"
 SLAVE_PORT = 7779
 SLAVE_SOCKET_PROTOCOL = "UDP"
 
+slave_socket = None
+
 def dcs_loop():
+    global slave_socket
+
     from .slave import Slave, slaves
     from .interface import root, tree
     from zeroconf import ServiceInfo, Zeroconf
@@ -51,12 +55,19 @@ def dcs_loop():
     try:
         while True:
             dcs_data, _ = dcs_socket.recvfrom(BUFFER_SIZE)
-                        
-            for slave in slaves:
-                encoded_data = base64.b64encode(dcs_data).decode()
-                message = json.dumps({'type': 'message', 'data': encoded_data})
-                bytes = slave.sock.send(message.encode(), socket.MSG_OOB) if SLAVE_SOCKET_PROTOCOL == 'TCP' else slave.sock.sendto(message.encode(), (slave.ip, SLAVE_PORT))
-                print(f"Sent {bytes} {message} to {slave.id} at address {slave.addr()}")
+            
+            encoded_data = base64.b64encode(dcs_data).decode()
+            message = json.dumps({'type': 'message', 'data': encoded_data})
+            
+            if SLAVE_SOCKET_PROTOCOL == 'TCP':
+                for slave in slaves:
+                    bytes = slave.sock.send(message.encode(), socket.MSG_OOB) if SLAVE_SOCKET_PROTOCOL == 'TCP' else slave.sock.sendto(message.encode(), (slave.ip, SLAVE_PORT))
+                    print(f"Sent {bytes} {message} to {slave.id} at address {slave.addr()}")
+            else:
+                if slave_socket is not None:
+                    bytes = slave_socket.sendto(message.encode(), ("232.0.1.3", SLAVE_PORT))
+                    print(f"Sent {bytes} {message} to multicast group 232.0.1.3")
+
     except KeyboardInterrupt:
         print("Kthxbai")
     finally:
@@ -64,6 +75,8 @@ def dcs_loop():
         zeroconf.close()
 
 def slave_loop():
+    global slave_socket
+
     from .slave import Slave, slaves
     from .interface import root, tree
     from zeroconf import ServiceInfo, Zeroconf
@@ -82,8 +95,11 @@ def slave_loop():
         slave_socket.listen(5)
     else:
         slave_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        slave_socket.bind((IP_ADDRESS, SLAVE_PORT))
+        slave_socket.bind(('10.0.0.10', SLAVE_PORT))
         slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
+        slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)
+        slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0)
+        slave_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     slave_sockets = []
 
