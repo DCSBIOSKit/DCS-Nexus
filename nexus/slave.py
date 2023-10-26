@@ -5,13 +5,7 @@ from typing import List
 from random import randint
 from rx.subject import Subject
 
-class ObservableObject:
-    def __setattr__(self, name, value):
-        super().__setattr__(name, value)
-        if hasattr(self, 'subject'):
-            self.subject.on_next(self)
-
-class Slave(ObservableObject):
+class Slave():
     sock: socket.socket
 
     def __init__(self, id, mac, ip="Unknown", port=7779, socket=None):
@@ -57,6 +51,7 @@ class Slave(ObservableObject):
     def update_from_json(self, json_dict):
         self.__dict__.update(json_dict)
         self.update_loop_duration()
+        self.subject.on_next(self)
 
     def rssi_to_text_bar(self, max_length=10):
         rssi_percent = 100 + self.rssi if self.rssi <= 0 else 100

@@ -10,9 +10,11 @@ SLAVE_PORT = 7779
 SLAVE_SOCKET_PROTOCOL = "UDP"
 
 slave_socket = None
+dcs_socket = None
 
 def dcs_loop():
     global slave_socket
+    global dcs_socket
 
     from .slave import Slave, slaves
     from .interface import root, tree
@@ -76,6 +78,7 @@ def dcs_loop():
 
 def slave_loop():
     global slave_socket
+    global dcs_socket
 
     from .slave import Slave, slaves
     from .interface import root, tree
@@ -135,13 +138,18 @@ def slave_loop():
 
                         if type == "message":
                             data = base64.b64decode(command.get('data', None))
+
+                            if data:
+                                dcs_socket.sendto(data, ('localhost', 7778))
+                        if type == "register":
+                            slave.update_from_json(slave_data)
+                        if type == "check-in":
+                            slave.update_from_json(slave_data)
                         else:
                             data = command.get('data', None)
 
                         print(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
                         
-                        slave.update_from_json(slave_data)
-
                         slave.last_received = int(time.time() * 1000)
                     except:
                         print(f"Failed to receive data from {s.getpeername()}")
@@ -171,6 +179,13 @@ def slave_loop():
 
                         if type == "message":
                             data = base64.b64decode(command.get('data', None))
+
+                            if data:
+                                dcs_socket.sendto(data, ('localhost', 7778))
+                        if type == "register":
+                            slave.update_from_json(slave_data)
+                        if type == "check-in":
+                            slave.update_from_json(slave_data)
                         else:
                             data = command.get('data', None)
 
