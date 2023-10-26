@@ -1,6 +1,7 @@
 import threading
 from tkinter import *
 from tkinter import ttk
+from queue import Queue
 
 IP_ADDRESS = "0.0.0.0"
 UDP_PORT = 5010
@@ -10,6 +11,7 @@ SLAVE_PORT = 7779
 SLAVE_SOCKET_PROTOCOL = "UDP"
 
 slave_socket = None
+dcs_message_queue = Queue()
 
 def dcs_loop():
     global slave_socket
@@ -61,12 +63,33 @@ def dcs_loop():
             
             if SLAVE_SOCKET_PROTOCOL == 'TCP':
                 for slave in slaves:
-                    bytes = slave.sock.send(message.encode(), socket.MSG_OOB) if SLAVE_SOCKET_PROTOCOL == 'TCP' else slave.sock.sendto(message.encode(), (slave.ip, SLAVE_PORT))
+                    bytes = slave.sock.send(message.encode(), socket.MSG_OOB)
                     print(f"Sent {bytes} {message} to {slave.id} at address {slave.addr()}")
             else:
                 if slave_socket is not None:
                     bytes = slave_socket.sendto(message.encode(), ("232.0.1.3", SLAVE_PORT))
                     print(f"Sent {bytes} {message} to multicast group 232.0.1.3")
+            
+            while not dcs_message_queue.empty():
+            #if not dcs_message_queue.empty():
+                data = dcs_message_queue.get()
+
+                dcs_socket.sendto(data[2], ('localhost', 7778))
+                print(f"Forwarded message to DCS-BIOS: {data[2]}")
+
+                ack = json.dumps({'type': 'ack', 'id': data[0], 'seq': data[1]})
+
+                if SLAVE_SOCKET_PROTOCOL == 'TCP':
+                    for slave in slaves:
+                        if slave.id == data[0]:
+                            slave.sock.send(ack.encode(), socket.MSG_OOB)
+                            bytes = slave.sock.send(ack.encode(), socket.MSG_OOB)
+                            print(f"Sent {bytes} {ack} to {slave.id} at address {slave.addr()}")
+                else:
+                    if slave_socket is not None:
+                        slave_socket.sendto(ack.encode(), ("232.0.1.3", SLAVE_PORT))
+                        bytes = slave_socket.sendto(ack.encode(), ("232.0.1.3", SLAVE_PORT))
+                        print(f"Sent {bytes} {ack} to multicast group 232.0.1.3")
 
     except KeyboardInterrupt:
         print("Kthxbai")
@@ -74,8 +97,11 @@ def dcs_loop():
         zeroconf.unregister_service(info)
         zeroconf.close()
 
+slave_last_sent = 0
+
 def slave_loop():
     global slave_socket
+    global slave_last_sent
 
     from .slave import Slave, slaves
     from .interface import root, tree
@@ -89,6 +115,7 @@ def slave_loop():
     if SLAVE_SOCKET_PROTOCOL == 'TCP':
         slave_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         slave_socket.bind((IP_ADDRESS, SLAVE_PORT))
+        slave_socket.setblocking(0);
         slave_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         slave_socket.setsockopt(socket.IPPROTO_TCP, socket.IP_TOS, 0x10)
         slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
@@ -96,6 +123,7 @@ def slave_loop():
     else:
         slave_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         slave_socket.bind(('10.0.0.10', SLAVE_PORT))
+        slave_socket.setblocking(0);
         slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
         slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)
         slave_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0)
@@ -113,6 +141,7 @@ def slave_loop():
                     if SLAVE_SOCKET_PROTOCOL == 'TCP':
                         conn, addr = s.accept()
                         s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                        s.setblocking(0);
                         s.setsockopt(socket.IPPROTO_TCP, socket.IP_TOS, 0x10)
                         s.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x10)
                         slave_sockets.append(conn)
@@ -135,6 +164,10 @@ def slave_loop():
 
                         if type == "message":
                             data = base64.b64decode(command.get('data', None))
+
+                            if data:
+                                dcs_message_queue.put((slave_data["id"], command['seq'], data))
+                                print(f"Enqueued message to DCS-BIOS: {data}")
                         else:
                             data = command.get('data', None)
 
@@ -171,6 +204,10 @@ def slave_loop():
 
                         if type == "message":
                             data = base64.b64decode(command.get('data', None))
+
+                            if data:
+                                dcs_message_queue.put((slave_data["id"], command['seq'], data))
+                                print(f"Enqueued message to DCS-BIOS: {data}")
                         else:
                             data = command.get('data', None)
 
@@ -179,8 +216,8 @@ def slave_loop():
                         slave.update_from_json(slave_data)
 
                         slave.last_received = int(time.time() * 1000)
-                    except:
-                        print(f"Failed to receive data from {slave_addr}")
+                    except Exception as e:
+                        print(f"Failed to receive data from {slave_addr}: {e}")
 
         # Check for stale slaves
         current_time = int(time.time() * 1000)
@@ -199,11 +236,17 @@ def slave_loop():
         message = json.dumps({"type": "check-in"})
         current_time = time.time() * 1000
 
-        for slave in slaves:
-            if current_time - slave.last_sent >= 1000:
-                slave.sock.send(message.encode()) if SLAVE_SOCKET_PROTOCOL == 'TCP' else slave.sock.sendto(message.encode(), (slave.ip, SLAVE_PORT))
-                slave.last_sent = current_time
-                print(f"Sent keep-alive to {slave.id} at address {slave.ip}")
+        # Mutlicaste mode
+        if current_time - slave_last_sent >= 1000:
+            slave_socket.sendto(message.encode(), ("232.0.1.3", SLAVE_PORT))
+            slave_last_sent = current_time
+
+        # Unicast mode
+        #for slave in slaves:
+        #    if current_time - slave.last_sent >= 1000:
+        #        slave.sock.send(message.encode()) if SLAVE_SOCKET_PROTOCOL == 'TCP' else slave.sock.sendto(message.encode(), (slave.ip, SLAVE_PORT))
+        #        slave.last_sent = current_time
+        #        print(f"Sent keep-alive to {slave.id} at address {slave.ip}")
 
 slave_thread = threading.Thread(target=slave_loop, daemon=True)
 slave_thread.start()
