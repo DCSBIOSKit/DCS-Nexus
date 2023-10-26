@@ -22,8 +22,6 @@ class Slave(ObservableObject):
         self.mac = mac
         self.last_received = time.time() * 1000
         self.last_sent = time.time() * 1000
-        self.last_ack = 0
-        self.ack_sent = False
         self.subject = Subject()
         self.subject.subscribe(update_tree)
 
