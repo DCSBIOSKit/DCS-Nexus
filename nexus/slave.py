@@ -49,9 +49,15 @@ class Slave():
         return (self.ip, self.port)
     
     def update_from_json(self, json_dict):
+        from .interface import tree
+
         self.__dict__.update(json_dict)
         self.update_loop_duration()
-        self.subject.on_next(self)
+        
+        try:
+            tree.after(0, lambda: self.subject.on_next(self))
+        except:
+            self.subject.on_next(self)
 
     def rssi_to_text_bar(self, max_length=10):
         rssi_percent = 100 + self.rssi if self.rssi <= 0 else 100

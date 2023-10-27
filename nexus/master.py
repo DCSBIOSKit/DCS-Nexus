@@ -1,6 +1,7 @@
 import threading
 from tkinter import *
 from tkinter import ttk
+from .interface import log
 
 IP_ADDRESS = "0.0.0.0"
 UDP_PORT = 5010
@@ -13,6 +14,7 @@ slave_socket = None
 dcs_socket = None
 
 def dcs_loop():
+    global log_window
     global slave_socket
     global dcs_socket
 
@@ -37,7 +39,7 @@ def dcs_loop():
         dcs_socket.bind((IP_ADDRESS, UDP_PORT))
         dcs_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(GROUP) + socket.inet_aton(IP_ADDRESS))
     except:
-        print("Failed to bind to socket")
+        log("Failed to bind to socket")
         return
 
     zeroconf = Zeroconf()
@@ -52,7 +54,7 @@ def dcs_loop():
 
     zeroconf.register_service(info)
 
-    print(f"Listening for connections on {ip_address}:{SLAVE_PORT}")
+    log(f"Listening for connections on {ip_address}:{SLAVE_PORT}")
 
     try:
         while True:
@@ -64,15 +66,17 @@ def dcs_loop():
             if SLAVE_SOCKET_PROTOCOL == 'TCP':
                 for slave in slaves:
                     bytes = slave.sock.send(message.encode(), socket.MSG_OOB) if SLAVE_SOCKET_PROTOCOL == 'TCP' else slave.sock.sendto(message.encode(), (slave.ip, SLAVE_PORT))
-                    print(f"Sent {bytes} {message} to {slave.id} at address {slave.addr()}")
+                    log(f"Sent {bytes} {message} to {slave.id} at address {slave.addr()}")
             else:
                 if slave_socket is not None:
                     bytes = slave_socket.sendto(message.encode(), ("232.0.1.3", SLAVE_PORT))
-                    print(f"Sent {bytes} {message} to multicast group 232.0.1.3")
+                    log(f"Sent {bytes} {message} to multicast group 232.0.1.3")
 
     except KeyboardInterrupt:
-        print("Kthxbai")
+        log("Kthxbai")
     finally:
+        if 'log_window' in globals():
+            log_window.restore_stdout()
         zeroconf.unregister_service(info)
         zeroconf.close()
 
@@ -148,11 +152,11 @@ def slave_loop():
                         else:
                             data = command.get('data', None)
 
-                        print(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
+                        log(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
                         
                         slave.last_received = int(time.time() * 1000)
                     except:
-                        print(f"Failed to receive data from {s.getpeername()}")
+                        log(f"Failed to receive data from {s.getpeername()}")
         else:
             readable_sockets, _, _ = select.select([slave_socket], [], [], 0.1)
             
@@ -189,13 +193,13 @@ def slave_loop():
                         else:
                             data = command.get('data', None)
 
-                        print(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
+                        log(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
                         
                         slave.update_from_json(slave_data)
 
                         slave.last_received = int(time.time() * 1000)
                     except:
-                        print(f"Failed to receive data from {slave_addr}")
+                        log(f"Failed to receive data from {slave_addr}")
 
         # Check for stale slaves
         current_time = int(time.time() * 1000)
@@ -205,7 +209,7 @@ def slave_loop():
 
         # Remove stale slaves and log their removal
         for stale_slave in stale_slaves:
-            print(f"Removing stale slave {stale_slave.id} with MAC address {stale_slave.mac} ({slave_sockets.count} remaining)")
+            log(f"Removing stale slave {stale_slave.id} with MAC address {stale_slave.mac} ({slave_sockets.count} remaining)")
             if slave_socket in slave_sockets:
                 slave_sockets.remove(stale_slave.sock)
             stale_slave.remove_slave()
@@ -218,7 +222,7 @@ def slave_loop():
             if current_time - slave.last_sent >= 1000:
                 slave.sock.send(message.encode()) if SLAVE_SOCKET_PROTOCOL == 'TCP' else slave.sock.sendto(message.encode(), (slave.ip, SLAVE_PORT))
                 slave.last_sent = current_time
-                print(f"Sent keep-alive to {slave.id} at address {slave.ip}")
+                log(f"Sent keep-alive to {slave.id} at address {slave.ip}")
 
 slave_thread = threading.Thread(target=slave_loop, daemon=True)
 slave_thread.start()

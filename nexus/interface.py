@@ -4,11 +4,13 @@ from tkinter import *
 from tkinter import ttk
 from .slave import *
 from .settings import *
+from .windows.log_window import *
 
 root = Tk()
 main_frame = ttk.Frame(root)
 tree = ttk.Treeview(main_frame, columns=('Identifier', 'IP', 'MAC', 'RSSI', 'Loop Time', 'Free Memory', 'CPU', 'Flash Size'), show='headings')
 style = ttk.Style()
+log_window = LogWindow()
 
 def set_dpi_awareness():
     if platform.system() == 'Windows':
@@ -74,7 +76,7 @@ def create_slave_list():
         selected_values = tree.item(selected_item)['values']
         selected_mac = selected_values[2]
         selected_slave = next((slave for slave in slaves if slave.mac == selected_mac), None)
-        print(f"Selected slave: {selected_slave.mac}")
+        log(f"Selected slave: {selected_slave.mac}")
     
     tree.bind('<<TreeviewSelect>>', on_treeview_select)
 
@@ -106,7 +108,7 @@ def toggle_style():
         style.theme_use('breeze-dark')
 
 def show_settings():
-    print("Settings")
+    log("Settings")
 
 def create_bottom_toolbar():
     toolbar = ttk.Frame(root)
@@ -118,6 +120,8 @@ def create_bottom_toolbar():
     separator = ttk.Separator(toolbar)
     separator.pack(side=LEFT, expand=1)
 
+    log_button = ttk.Button(toolbar, text="Log", command=log_window.show)
+    log_button.pack(side=LEFT, padx=2, pady=2)
     settings_button = ttk.Button(toolbar, text="Settings", command=show_settings)
     settings_button.pack(side=LEFT, padx=2, pady=2)
 
