@@ -2,6 +2,7 @@ import threading
 from tkinter import *
 from tkinter import ttk
 from .interface import log
+from queue import Queue
 
 IP_ADDRESS = "0.0.0.0"
 UDP_PORT = 5010
@@ -12,6 +13,7 @@ SLAVE_SOCKET_PROTOCOL = "UDP"
 
 slave_socket = None
 dcs_socket = None
+dcs_message_queue = Queue()
 
 def dcs_loop():
     global log_window
@@ -113,7 +115,7 @@ def slave_loop():
     while True:
         # Create a list of sockets to monitor
         if SLAVE_SOCKET_PROTOCOL == 'TCP':
-            readable_sockets, _, _ = select.select([slave_socket] + slave_sockets, [], [], 0.1)
+            readable_sockets, _, _ = select.select([slave_socket] + slave_sockets, [], [], 0)
             
             for s in readable_sockets:
                 if s is slave_socket:
@@ -158,7 +160,7 @@ def slave_loop():
                     except:
                         log(f"Failed to receive data from {s.getpeername()}")
         else:
-            readable_sockets, _, _ = select.select([slave_socket], [], [], 0.1)
+            readable_sockets, _, _ = select.select([slave_socket], [], [])
             
             for s in readable_sockets:
                 if s is slave_socket:
@@ -181,11 +183,14 @@ def slave_loop():
                             slave.update_from_json(slave_data)
                             slave.add_slave()
 
+                        data = None
+
                         if type == "message":
                             data = base64.b64decode(command.get('data', None))
 
-                            if data:
-                                dcs_socket.sendto(data, ('localhost', 7778))
+                            if data is not None:
+                                dcs_message_queue.put((slave_data["id"], command['seq'], data))
+                                print(f"Enqueued message to DCS-BIOS: {data}")
                         if type == "register":
                             slave.update_from_json(slave_data)
                         if type == "check-in":
@@ -193,13 +198,33 @@ def slave_loop():
                         else:
                             data = command.get('data', None)
 
-                        log(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
+                        if data is not None:
+                            log(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
+                        else:
+                            log(f"Received {type} from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
                         
                         slave.update_from_json(slave_data)
 
                         slave.last_received = int(time.time() * 1000)
-                    except:
-                        log(f"Failed to receive data from {slave_addr}")
+                    except Exception as e:
+                        log(f"Failed to receive data from {slave_addr}: {e}")
+
+        while not dcs_message_queue.empty():
+            data = dcs_message_queue.get()
+            dcs_socket.sendto(data[2], ('localhost', 7778))
+            print(f"Forwarded message to DCS-BIOS: {data[2]}")
+            ack = json.dumps({'type': 'ack', 'id': data[0], 'seq': data[1]})
+            if SLAVE_SOCKET_PROTOCOL == 'TCP':
+                for slave in slaves:
+                    if slave.id == data[0]:
+                        slave.sock.send(ack.encode(), socket.MSG_OOB)
+                        bytes = slave.sock.send(ack.encode(), socket.MSG_OOB)
+                        print(f"Sent {bytes} {ack} to {slave.id} at address {slave.addr()}")
+            else:
+                if slave_socket is not None:
+                    slave_socket.sendto(ack.encode(), ("232.0.1.3", SLAVE_PORT))
+                    bytes = slave_socket.sendto(ack.encode(), ("232.0.1.3", SLAVE_PORT))
+                    print(f"Sent {bytes} {ack} to multicast group 232.0.1.3")
 
         # Check for stale slaves
         current_time = int(time.time() * 1000)
