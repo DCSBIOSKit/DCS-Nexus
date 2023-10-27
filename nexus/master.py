@@ -169,10 +169,9 @@ def slave_loop():
 
                             if message:
                                 dcs_socket.sendto(message, ('localhost', 7778))
-                        if type == "register":
-                            slave.update_from_json(slave_data)
-                        if type == "check-in":
-                            slave.update_from_json(slave_data)
+                        # Disabled at the moment due to drawing performance issues blocking the dcs_thread due to the GIL
+                        #if type == "check-in":
+                            #slave.update_from_json(slave_data)
                         else:
                             message = command.get('data', None)
 
@@ -223,10 +222,9 @@ def slave_loop():
                                 if not is_duplicate:
                                     dcs_message_queue.put(DCSOutMessage(slave_data['id'], command['seq'], message))
                                 # log(f"Enqueued message to DCS-BIOS: {message}")
-                        if type == "register":
-                            slave.update_from_json(slave_data)
-                        if type == "check-in":
-                            slave.update_from_json(slave_data)
+                        # Disabled at the moment due to drawing performance issues blocking the dcs_thread due to the GIL
+                        #if type == "check-in":
+                            #slave.update_from_json(slave_data)
                         else:
                             message = command.get('data', None)
 
@@ -235,8 +233,6 @@ def slave_loop():
                         else:
                             log(f"Received {type} from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
                         
-                        slave.update_from_json(slave_data)
-
                         slave.last_received = int(time.time() * 1000)
                     except Exception as e:
                         log(f"Failed to receive data from {slave_addr}: {e}")
