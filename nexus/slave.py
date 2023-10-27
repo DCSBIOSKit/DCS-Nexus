@@ -9,7 +9,7 @@ class Slave():
     sock: socket.socket
 
     def __init__(self, id, mac, ip="Unknown", port=7779, socket=None):
-        from .interface import tree, update_tree
+        #from .interface import tree, update_tree
 
         # Required properties
         self.id = id
@@ -17,7 +17,7 @@ class Slave():
         self.last_received = time.time() * 1000
         self.last_sent = time.time() * 1000
         self.subject = Subject()
-        self.subject.subscribe(update_tree)
+        #self.subject.subscribe(update_tree)
 
         # Optional properties
         self.sock = socket
@@ -49,15 +49,11 @@ class Slave():
         return (self.ip, self.port)
     
     def update_from_json(self, json_dict):
-        from .interface import tree
+        from .interface import window
 
         self.__dict__.update(json_dict)
         self.update_loop_duration()
-        
-        try:
-            tree.after(0, lambda: self.subject.on_next(self))
-        except:
-            self.subject.on_next(self)
+        window.update_table()        
 
     def rssi_to_text_bar(self, max_length=10):
         rssi_percent = 100 + self.rssi if self.rssi <= 0 else 100
@@ -82,24 +78,21 @@ class Slave():
     
     # Add and remove
     def add_slave(self):
-        from .interface import tree, update_tree
+        from .interface import window
 
         slaves.append(self)
-        tree.insert('', END, values=self.tree_values())
+        window.update_table()
 
     def remove_slave(self):
-        from .interface import tree
+        from .interface import window
 
         mac_to_remove = self.mac
         slaves_to_remove = [slave for slave in slaves if slave.mac == mac_to_remove]
 
-        for item in tree.get_children():
-            values = tree.item(item, 'values')
-            if values[2] == mac_to_remove:  # Assuming MAC is the 3rd value in the tree
-                tree.delete(item)
-
         for slave in slaves_to_remove:
             slaves.remove(slave)
+
+        window.update_table()
 
     def find_slave_by_id(id):
         for slave in slaves:

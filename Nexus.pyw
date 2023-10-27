@@ -1,3 +1,3 @@
 import nexus
 
-nexus.create_interface()
+nexus.create_app()

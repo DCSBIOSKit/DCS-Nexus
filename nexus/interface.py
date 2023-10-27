@@ -1,167 +1,100 @@
-import os
-import platform
-from tkinter import *
-from .slave import *
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidget, QTableWidgetItem, QToolBar, QAction, QVBoxLayout, QWidget, QHeaderView, QMenu
+from PyQt5.QtCore import Qt
+import sys
+from .slave import Slave, slaves
 from .settings import *
-from .windows.log_window import *
+from .windows.log_window import LogWindow
 
-root = Tk()
-main_frame = tk.Frame(root)
-tree = ttk.Treeview(main_frame, columns=('Identifier', 'IP', 'MAC', 'RSSI', 'Loop Time', 'Free Memory', 'CPU', 'Flash Size'), show='headings')
-style = ttk.Style()
-log_window = LogWindow()
+class NexusMainWindow(QMainWindow):
+    def __init__(self):
+        super(NexusMainWindow, self).__init__()
 
-def set_dpi_awareness():
-    if platform.system() == 'Windows':
-        import ctypes
-        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+        # Main UI setup
+        self.setWindowTitle("Nexus")
+        self.setGeometry(200, 200, 800, 600)
 
-def import_themes():
-    current_directory = os.getcwd()
-    full_path = os.path.join(current_directory, 'assets/tkBreeze-master')
+        # Create QTableWidget object
+        self.tableWidget = QTableWidget()
+        self.tableWidget.setColumnCount(8)
+        self.tableWidget.setHorizontalHeaderLabels(['Identifier', 'IP', 'MAC', 'RSSI', 'Loop Time', 'Free Memory', 'CPU', 'Flash Size'])
+        self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        
+        # Create Toolbar
+        self.toolbar = self.addToolBar("Main Toolbar")
+        log_action = QAction("Log", self)
+        self.toolbar.addAction(log_action)
+        settings_action = QAction("Settings", self)
+        self.toolbar.addAction(settings_action)
 
-    root.tk.call('lappend', 'auto_path', full_path)
-    root.tk.call('package', 'require', 'ttk::theme::breeze')
-    root.tk.call('package', 'require', 'ttk::theme::breeze-dark')
-    root.tk.call('tk', 'scaling', '-displayof', '.', 2)
+        # Layouts
+        layout = QVBoxLayout()
+        layout.addWidget(self.tableWidget)
+        container = QWidget()
+        container.setLayout(layout)
+        self.setCentralWidget(container)
 
-def configure_window():
-    root.title("Nexus")
-    
-    #style.theme_use('breeze-dark') # Causes massive delays on updates of tree
-    
-    main_frame.pack(fill=BOTH, expand=1)
+        # Signals & Slots
+        self.tableWidget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tableWidget.customContextMenuRequested.connect(self.show_context_menu)
+        log_action.triggered.connect(self.log_button_clicked)
+        settings_action.triggered.connect(self.settings_button_clicked)
 
-def update_tree(slave):
-    for item in tree.get_children():
-        item_data = tree.item(item, 'values')  # This gives you a tuple of the values
-        mac_address = item_data[2]  # Assuming the MAC address is the third column
-
-        # Find the corresponding Slave object based on MAC address
-        slave = next((s for s in slaves if s.mac == mac_address), None)
-
-        if slave:
-            tree.item(item, values=slave.tree_values())
-
-def create_slave_list():
-    def treeview_sort_column(tv, col, reverse):
-        l = [(tv.set(k, col), k) for k in tv.get_children('')]
-        l.sort(reverse=reverse)
-
-        # rearrange items in sorted positions
-        for index, (val, k) in enumerate(l):
-            tv.move(k, '', index)
-
-        # reverse sort next time
-        tv.heading(col, command=lambda: treeview_sort_column(tv, col, not reverse))
-
-    # Create a Treeview widget
-    tree.heading('Identifier', text='Identifier', command=lambda: treeview_sort_column(tree, 'Identifier', False))
-    tree.heading('IP', text='IP', command=lambda: treeview_sort_column(tree, 'IP', False))
-    tree.heading('MAC', text='MAC', command=lambda: treeview_sort_column(tree, 'MAC', False))
-    tree.heading('RSSI', text='RSSI', command=lambda: treeview_sort_column(tree, 'RSSI', False))
-    tree.heading('Loop Time', text='Loop Time', command=lambda: treeview_sort_column(tree, 'Loop Time', False))
-    tree.heading('Free Memory', text='Free Memory', command=lambda: treeview_sort_column(tree, 'Free Memory', False))
-    tree.heading('CPU', text='CPU', command=lambda: treeview_sort_column(tree, 'CPU', False))
-    tree.heading('Flash Size', text='Flash Size', command=lambda: treeview_sort_column(tree, 'Flash Size', False))
-
-    """ slaves = Slave.generate_sample_slaves()
-    for slave in slaves:
-        tree.insert('', END, values=(slave.id, slave.ip, slave.mac))
-        slave.subject.subscribe(update_tree) """
-
-    def on_treeview_select(event):
-        selected_item = tree.selection()[0]
-        selected_values = tree.item(selected_item)['values']
-        selected_mac = selected_values[2]
-        selected_slave = next((slave for slave in slaves if slave.mac == selected_mac), None)
-        log(f"Selected slave: {selected_slave.mac}")
-    
-    tree.bind('<<TreeviewSelect>>', on_treeview_select)
-
-    # Create a scrollbar
-    scrollbar = ttk.Scrollbar(main_frame, orient=VERTICAL, command=tree.yview)
-    tree.config(yscrollcommand=scrollbar.set)
-
-    # Pack the Treeview and Scrollbar
-    scrollbar.pack(side=RIGHT, fill=Y)
-    tree.pack(side=LEFT, fill=BOTH, expand=1)
-
-    def on_item_right_click(event):
-        item = tree.identify('item', event.x, event.y)
-        if item:
-            context_menu.post(event.x_root, event.y_root)
-            context_menu.entryconfig("Restart", command=lambda i=item: restart_item(i))
-
-    def restart_item(item):
+        # Initialize table
+        self.update_table()
+        
+    def show_context_menu(self, pos):
+        context_menu = QMenu(self)
+        restart_action = context_menu.addAction("Restart")
+        restart_action.triggered.connect(self.restart_item)
+        context_menu.exec_(self.tableWidget.mapToGlobal(pos))
+        
+    def restart_item(self):
         from .master import enqueue_slave_command, SlaveCommand
 
-        if item:
-            item_values = tree.item(item, 'values')
-            print(f"Restarting slave: {item_values[0]}")
-            enqueue_slave_command(SlaveCommand("restart", item_values[0]))
+        selected_row = self.tableWidget.currentRow()
+        if selected_row >= 0:
+            mac_address = self.tableWidget.item(selected_row, 2).text()
+            slave = Slave.find_slave_by_mac(mac_address)
+            if slave:
+                print(f"Restarting slave: {slave.id}")
+                enqueue_slave_command(SlaveCommand("restart", slave.id))
 
-    # Create context menu
-    context_menu = tk.Menu(root, tearoff=0)
-    context_menu.add_command(label="Restart", command=restart_item)
+    def log_button_clicked(self):
+        print("Log Button Clicked")
+        # Implement the log action here
 
-    # Bind right-click event to the tree
-    tree.bind("<Button-3>", on_item_right_click)
+    def settings_button_clicked(self):
+        print("Settings Button Clicked")
+        # Implement the settings action here
 
-    # Bind CMD+Q to save settings and quit
-    root.createcommand("::tk::mac::Quit", lambda: (
-        save_settings(),
-        root.destroy()
-    ))
+    def update_table(self):
+        global slaves
+        
+        self.tableWidget.setRowCount(0)
+        for slave in slaves:
+            free_heap_kB = slave.free_heap / 1024
+            loop_duration_ms = slave.loop_duration / 1000
+            flash_size_mb = slave.flash_size / 1024 / 1024
 
-def toggle_style():
-    """ global slaves
-    new_slave = Slave("New_Slave", "192.168.1.100", "00:1A:2B:3C:4D")
-    new_slave.subject.subscribe(update_tree)
-    slaves.append(new_slave)
-    tree.insert('', END, values=(new_slave.id, new_slave.ip, new_slave.mac))
-    new_slave.ip = "192.168.1.101" """
+            row_position = self.tableWidget.rowCount()
+            self.tableWidget.insertRow(row_position)
+            self.tableWidget.setItem(row_position, 0, QTableWidgetItem(str(slave.id)))
+            self.tableWidget.setItem(row_position, 1, QTableWidgetItem(slave.ip))
+            self.tableWidget.setItem(row_position, 2, QTableWidgetItem(slave.mac))
+            self.tableWidget.setItem(row_position, 3, QTableWidgetItem(str(slave.rssi_to_text_bar())))
+            self.tableWidget.setItem(row_position, 4, QTableWidgetItem(str(slave.loop_duration_string()) + " ms"))
+            self.tableWidget.setItem(row_position, 5, QTableWidgetItem("{:.0f} kB".format(free_heap_kB)))
+            self.tableWidget.setItem(row_position, 6, QTableWidgetItem(str(slave.cpu_freq) + " MHz"))
+            self.tableWidget.setItem(row_position, 7, QTableWidgetItem(str(flash_size_mb) + " MB"))
 
-    if style.theme_use() == 'breeze-dark':
-        style.theme_use('breeze')
-    else:
-        style.theme_use('breeze-dark')
+            # (self.id, self.ip, self.mac, f"{self.rssi_to_text_bar()}", f"{self.loop_duration_string()} ms", f"{free_heap_kB:.1f} kB", f"{self.cpu_freq} MHz", f"{flash_size_mb} MB")
 
-def show_settings():
-    log("Settings")
+window = None
 
-def create_bottom_toolbar():
-    toolbar = ttk.Frame(root)
-    toolbar.pack(side=BOTTOM, fill=X)
+def create_app():
+    global window
 
-    #appearance_button = ttk.Button(toolbar, text="Appearance", command=toggle_style)
-    #appearance_button.pack(side=LEFT, padx=2, pady=2)
-
-    separator = ttk.Separator(toolbar)
-    separator.pack(side=LEFT, expand=1)
-
-    log_button = ttk.Button(toolbar, text="Log", command=log_window.show)
-    log_button.pack(side=LEFT, padx=2, pady=2)
-    settings_button = ttk.Button(toolbar, text="Settings", command=show_settings)
-    settings_button.pack(side=LEFT, padx=2, pady=2)
-
-def center_window():
-    root.update_idletasks()
-    width = root.winfo_width()
-    height = root.winfo_height()
-    x = (root.winfo_screenwidth() // 2) - (width // 2)
-    y = (root.winfo_screenheight() // 2) - (height // 2)
-    root.geometry(f'{width}x{height}+{x}+{y}')
-
-def create_interface():
-    set_dpi_awareness()
-    import_themes()
-    configure_window()
-    create_slave_list()
-    create_bottom_toolbar()
-    center_window()
-    load_settings()
-    
-    root.protocol("WM_DELETE_WINDOW", lambda: (save_settings(), root.destroy()))
-
-    root.mainloop()
+    app = QApplication(sys.argv)
+    window = NexusMainWindow()
+    window.show()
+    sys.exit(app.exec_())

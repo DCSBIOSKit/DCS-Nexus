@@ -20,12 +20,12 @@ class TeeOut:
         self.out2.flush()
 
 def log(text):
-    from ..interface import root
+    #from ..interface import root
 
-    try:
-        root.after(0, lambda: print(text))
-    except:
-        print(text)
+    #try:
+    #    root.after(0, lambda: print(text))
+    #except:
+    print(text)
 
 class LogWindow:
     def __init__(self):

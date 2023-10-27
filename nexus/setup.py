@@ -6,7 +6,7 @@ except ImportError:
     subprocess.call(['pip', 'install', 'setuptools'])
     import pkg_resources
 
-packages = ["zeroconf", "ttkthemes", "PyYAML", "rx"]
+packages = ["zeroconf", "PyQt5", "PyYAML", "rx"]
 
 installed = {pkg.key for pkg in pkg_resources.working_set}
 

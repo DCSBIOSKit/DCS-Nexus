@@ -1,7 +1,7 @@
 import threading
 from tkinter import *
 from tkinter import ttk
-from .interface import log
+from .windows.log_window import log
 from queue import Queue
 import time
 
@@ -43,7 +43,6 @@ def dcs_loop():
     global dcs_socket
 
     from .slave import Slave, slaves
-    from .interface import root, tree
     from zeroconf import ServiceInfo, Zeroconf
     import socket
     import json
@@ -109,7 +108,6 @@ def slave_loop():
     global dcs_socket
 
     from .slave import Slave, slaves
-    from .interface import root, tree
     from zeroconf import ServiceInfo, Zeroconf
     import socket
     import json
