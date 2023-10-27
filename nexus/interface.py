@@ -43,7 +43,7 @@ def update_tree(slave):
 
         if slave:
             tree.item(item, values=slave.tree_values())
-            
+
 def create_slave_list():
     def treeview_sort_column(tv, col, reverse):
         l = [(tv.set(k, col), k) for k in tv.get_children('')]
@@ -87,6 +87,27 @@ def create_slave_list():
     # Pack the Treeview and Scrollbar
     scrollbar.pack(side=RIGHT, fill=Y)
     tree.pack(side=LEFT, fill=BOTH, expand=1)
+
+    def on_item_right_click(event):
+        item = tree.identify('item', event.x, event.y)
+        if item:
+            context_menu.post(event.x_root, event.y_root)
+            context_menu.entryconfig("Restart", command=lambda i=item: restart_item(i))
+
+    def restart_item(item):
+        from .master import enqueue_slave_command, SlaveCommand
+
+        if item:
+            item_values = tree.item(item, 'values')
+            print(f"Restarting slave: {item_values[0]}")
+            enqueue_slave_command(SlaveCommand("restart", item_values[0]))
+
+    # Create context menu
+    context_menu = tk.Menu(root, tearoff=0)
+    context_menu.add_command(label="Restart", command=restart_item)
+
+    # Bind right-click event to the tree
+    tree.bind("<Button-3>", on_item_right_click)
 
     # Bind CMD+Q to save settings and quit
     root.createcommand("::tk::mac::Quit", lambda: (

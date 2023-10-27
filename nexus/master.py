@@ -25,6 +25,18 @@ class DCSOutMessage:
 
 dcs_message_queue: Queue[DCSOutMessage] = Queue()
 
+class SlaveCommand:
+    data = None
+
+    def __init__(self, type, slave_id=None):
+        self.type = type
+        self.slave_id = slave_id
+
+slave_command_queue: Queue[SlaveCommand] = Queue()
+
+def enqueue_slave_command(command):
+    slave_command_queue.put(command)
+
 def dcs_loop():
     global log_window
     global slave_socket
@@ -259,6 +271,25 @@ def slave_loop():
         # Remove items that are old
         for item in items_to_remove:
             dcs_message_queue.queue.remove(item)
+
+        # Send out slave commands
+        while not slave_command_queue.empty():
+            command = slave_command_queue.get()
+
+            payload = json.dumps({"type": command.type, "id": command.slave_id, "data": command.data}).encode()
+
+            if command.type == "restart-all":
+                for slave in slaves:  # Assuming 'slaves' is the list containing all Slave objects
+                    slave.sock.send(payload) if SLAVE_SOCKET_PROTOCOL == 'TCP' else slave_socket.sendto(payload, ("232.0.1.3", SLAVE_PORT))
+                    log(f"Sent restart command to all slaves")
+
+            elif command.type == "restart":
+                slave = Slave.find_slave_by_id(command.slave_id)
+                if slave:
+                    slave.sock.send(payload) if SLAVE_SOCKET_PROTOCOL == 'TCP' else slave_socket.sendto(payload, ("232.0.1.3", SLAVE_PORT))
+                    log(f"Sent restart command to {slave.id} ")
+                else:
+                    log(f"Failed to send restart command to {command.slave_id} because it is not registered")
 
         # Check for stale slaves
         current_time = int(time.time() * 1000)

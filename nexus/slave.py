@@ -101,6 +101,12 @@ class Slave():
         for slave in slaves_to_remove:
             slaves.remove(slave)
 
+    def find_slave_by_id(id):
+        for slave in slaves:
+            if slave.id == id:
+                return slave
+        return None
+
     def find_slave_by_mac(mac_address):
         for slave in slaves:
             if slave.mac == mac_address:
