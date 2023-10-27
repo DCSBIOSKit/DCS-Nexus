@@ -94,7 +94,7 @@ def dcs_loop():
             else:
                 if slave_socket is not None:
                     bytes = slave_socket.sendto(message.encode(), ("232.0.1.3", SLAVE_PORT))
-                    # log(f"Sent {bytes} {message} to multicast group 232.0.1.3")
+                    log(f"Sent {bytes} {message} to multicast group 232.0.1.3")
 
     except KeyboardInterrupt:
         log("Kthxbai")
@@ -182,7 +182,7 @@ def slave_loop():
                     except:
                         log(f"Failed to receive data from {s.getpeername()}")
         else:
-            readable_sockets, _, _ = select.select([slave_socket], [], [])
+            readable_sockets, _, _ = select.select([slave_socket], [], [], 0.001)
             
             for s in readable_sockets:
                 if s is slave_socket:
@@ -222,7 +222,7 @@ def slave_loop():
                                 # If not a duplicate, add to the queue
                                 if not is_duplicate:
                                     dcs_message_queue.put(DCSOutMessage(slave_data['id'], command['seq'], message))
-                                # print(f"Enqueued message to DCS-BIOS: {message}")
+                                # log(f"Enqueued message to DCS-BIOS: {message}")
                         if type == "register":
                             slave.update_from_json(slave_data)
                         if type == "check-in":
@@ -252,7 +252,7 @@ def slave_loop():
             if not message.acknowledged:
                 message.acknowledged = True
                 dcs_socket.sendto(message.data, ('localhost', 7778))
-                print(f"Forwarded message to DCS-BIOS: {message.data} (seq {message.seq})")
+                log(f"Forwarded message to DCS-BIOS: {message.data} (seq {message.seq})")
                 
                 ack = json.dumps({'type': 'ack', 'id': message.slave_id, 'seq': message.seq})
                 
@@ -261,12 +261,12 @@ def slave_loop():
                         if slave.id == message.slave_id:
                             slave.sock.send(ack.encode(), socket.MSG_OOB)
                             bytes_sent = slave.sock.send(ack.encode(), socket.MSG_OOB)
-                            #print(f"Sent {bytes_sent} {ack} to {slave.id} at address {slave.addr()}")
+                            #log(f"Sent {bytes_sent} {ack} to {slave.id} at address {slave.addr()}")
                 else:
                     if slave_socket is not None:
                         slave_socket.sendto(ack.encode(), ("232.0.1.3", SLAVE_PORT))
                         bytes_sent = slave_socket.sendto(ack.encode(), ("232.0.1.3", SLAVE_PORT))
-                        print(f"Sent {bytes_sent} {ack} to multicast group 232.0.1.3")
+                        log(f"Sent {bytes_sent} {ack} to multicast group 232.0.1.3")
 
         # Remove items that are old
         for item in items_to_remove:
@@ -299,7 +299,7 @@ def slave_loop():
 
         # Remove stale slaves and log their removal
         for stale_slave in stale_slaves:
-            log(f"Removing stale slave {stale_slave.id} with MAC address {stale_slave.mac} ({slave_sockets.count} remaining)")
+            log(f"Removing stale slave {stale_slave.id} with MAC address {stale_slave.mac} ({len(slave_sockets)} remaining)")
             if slave_socket in slave_sockets:
                 slave_sockets.remove(stale_slave.sock)
             stale_slave.remove_slave()
