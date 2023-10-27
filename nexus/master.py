@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import ttk
 from .interface import log
 from queue import Queue
+import time
 
 IP_ADDRESS = "0.0.0.0"
 UDP_PORT = 5010
@@ -13,7 +14,16 @@ SLAVE_SOCKET_PROTOCOL = "UDP"
 
 slave_socket = None
 dcs_socket = None
-dcs_message_queue = Queue()
+
+class DCSOutMessage:
+    def __init__(self, slave_id, seq, data):
+        self.slave_id = slave_id
+        self.seq = seq
+        self.data = data
+        self.received_at = time.time() * 1000
+        self.acknowledged = False
+
+dcs_message_queue: Queue[DCSOutMessage] = Queue()
 
 def dcs_loop():
     global log_window
@@ -72,7 +82,7 @@ def dcs_loop():
             else:
                 if slave_socket is not None:
                     bytes = slave_socket.sendto(message.encode(), ("232.0.1.3", SLAVE_PORT))
-                    log(f"Sent {bytes} {message} to multicast group 232.0.1.3")
+                    # log(f"Sent {bytes} {message} to multicast group 232.0.1.3")
 
     except KeyboardInterrupt:
         log("Kthxbai")
@@ -143,18 +153,18 @@ def slave_loop():
                             slave.add_slave()
 
                         if type == "message":
-                            data = base64.b64decode(command.get('data', None))
+                            message = base64.b64decode(command.get('data', None))
 
-                            if data:
-                                dcs_socket.sendto(data, ('localhost', 7778))
+                            if message:
+                                dcs_socket.sendto(message, ('localhost', 7778))
                         if type == "register":
                             slave.update_from_json(slave_data)
                         if type == "check-in":
                             slave.update_from_json(slave_data)
                         else:
-                            data = command.get('data', None)
+                            message = command.get('data', None)
 
-                        log(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
+                        log(f"Received {type} ({message}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
                         
                         slave.last_received = int(time.time() * 1000)
                     except:
@@ -183,23 +193,33 @@ def slave_loop():
                             slave.update_from_json(slave_data)
                             slave.add_slave()
 
-                        data = None
+                        message = None
 
                         if type == "message":
-                            data = base64.b64decode(command.get('data', None))
+                            message = base64.b64decode(command.get('data', None))
 
-                            if data is not None:
-                                dcs_message_queue.put((slave_data["id"], command['seq'], data))
-                                print(f"Enqueued message to DCS-BIOS: {data}")
+                            if message is not None:
+                                is_duplicate = False
+
+                                # Check if the queue already contains a message with the same slave_id and seq
+                                for existing_message in list(dcs_message_queue.queue):
+                                    if existing_message.slave_id == slave_data['id'] and existing_message.seq == command['seq']:
+                                        is_duplicate = True
+                                        break
+
+                                # If not a duplicate, add to the queue
+                                if not is_duplicate:
+                                    dcs_message_queue.put(DCSOutMessage(slave_data['id'], command['seq'], message))
+                                # print(f"Enqueued message to DCS-BIOS: {message}")
                         if type == "register":
                             slave.update_from_json(slave_data)
                         if type == "check-in":
                             slave.update_from_json(slave_data)
                         else:
-                            data = command.get('data', None)
+                            message = command.get('data', None)
 
-                        if data is not None:
-                            log(f"Received {type} ({data}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
+                        if message is not None:
+                            log(f"Received {type} ({message}) from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
                         else:
                             log(f"Received {type} from {slave_data['id']} ({slave_data['mac']}) at address {slave.ip} rssi {slave_data['rssi']}")
                         
@@ -209,22 +229,36 @@ def slave_loop():
                     except Exception as e:
                         log(f"Failed to receive data from {slave_addr}: {e}")
 
-        while not dcs_message_queue.empty():
-            data = dcs_message_queue.get()
-            dcs_socket.sendto(data[2], ('localhost', 7778))
-            print(f"Forwarded message to DCS-BIOS: {data[2]}")
-            ack = json.dumps({'type': 'ack', 'id': data[0], 'seq': data[1]})
-            if SLAVE_SOCKET_PROTOCOL == 'TCP':
-                for slave in slaves:
-                    if slave.id == data[0]:
-                        slave.sock.send(ack.encode(), socket.MSG_OOB)
-                        bytes = slave.sock.send(ack.encode(), socket.MSG_OOB)
-                        print(f"Sent {bytes} {ack} to {slave.id} at address {slave.addr()}")
-            else:
-                if slave_socket is not None:
-                    slave_socket.sendto(ack.encode(), ("232.0.1.3", SLAVE_PORT))
-                    bytes = slave_socket.sendto(ack.encode(), ("232.0.1.3", SLAVE_PORT))
-                    print(f"Sent {bytes} {ack} to multicast group 232.0.1.3")
+        items_to_remove = []
+        for message in list(dcs_message_queue.queue):
+            
+            # Check if the item is old, messages are saved for 60 seconds in case they are retranmitted (so they can be ignored).
+            if time.time() * 1000 - message.received_at >= 10000:
+                items_to_remove.append(message)
+                continue
+            
+            if not message.acknowledged:
+                message.acknowledged = True
+                dcs_socket.sendto(message.data, ('localhost', 7778))
+                print(f"Forwarded message to DCS-BIOS: {message.data} (seq {message.seq})")
+                
+                ack = json.dumps({'type': 'ack', 'id': message.slave_id, 'seq': message.seq})
+                
+                if SLAVE_SOCKET_PROTOCOL == 'TCP':
+                    for slave in slaves:
+                        if slave.id == message.slave_id:
+                            slave.sock.send(ack.encode(), socket.MSG_OOB)
+                            bytes_sent = slave.sock.send(ack.encode(), socket.MSG_OOB)
+                            #print(f"Sent {bytes_sent} {ack} to {slave.id} at address {slave.addr()}")
+                else:
+                    if slave_socket is not None:
+                        slave_socket.sendto(ack.encode(), ("232.0.1.3", SLAVE_PORT))
+                        bytes_sent = slave_socket.sendto(ack.encode(), ("232.0.1.3", SLAVE_PORT))
+                        print(f"Sent {bytes_sent} {ack} to multicast group 232.0.1.3")
+
+        # Remove items that are old
+        for item in items_to_remove:
+            dcs_message_queue.queue.remove(item)
 
         # Check for stale slaves
         current_time = int(time.time() * 1000)
