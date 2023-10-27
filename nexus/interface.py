@@ -1,13 +1,12 @@
 import os
 import platform
 from tkinter import *
-from tkinter import ttk
 from .slave import *
 from .settings import *
 from .windows.log_window import *
 
 root = Tk()
-main_frame = ttk.Frame(root)
+main_frame = tk.Frame(root)
 tree = ttk.Treeview(main_frame, columns=('Identifier', 'IP', 'MAC', 'RSSI', 'Loop Time', 'Free Memory', 'CPU', 'Flash Size'), show='headings')
 style = ttk.Style()
 log_window = LogWindow()
@@ -29,7 +28,7 @@ def import_themes():
 def configure_window():
     root.title("Nexus")
     
-    style.theme_use('breeze-dark')
+    #style.theme_use('breeze-dark') # Causes massive delays on updates of tree
     
     main_frame.pack(fill=BOTH, expand=1)
 
@@ -135,8 +134,8 @@ def create_bottom_toolbar():
     toolbar = ttk.Frame(root)
     toolbar.pack(side=BOTTOM, fill=X)
 
-    appearance_button = ttk.Button(toolbar, text="Appearance", command=toggle_style)
-    appearance_button.pack(side=LEFT, padx=2, pady=2)
+    #appearance_button = ttk.Button(toolbar, text="Appearance", command=toggle_style)
+    #appearance_button.pack(side=LEFT, padx=2, pady=2)
 
     separator = ttk.Separator(toolbar)
     separator.pack(side=LEFT, expand=1)

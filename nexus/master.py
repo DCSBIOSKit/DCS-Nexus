@@ -169,9 +169,8 @@ def slave_loop():
 
                             if message:
                                 dcs_socket.sendto(message, ('localhost', 7778))
-                        # Disabled at the moment due to drawing performance issues blocking the dcs_thread due to the GIL
-                        #if type == "check-in":
-                            #slave.update_from_json(slave_data)
+                        if type == "check-in":
+                            slave.update_from_json(slave_data)
                         else:
                             message = command.get('data', None)
 
@@ -222,9 +221,8 @@ def slave_loop():
                                 if not is_duplicate:
                                     dcs_message_queue.put(DCSOutMessage(slave_data['id'], command['seq'], message))
                                 # log(f"Enqueued message to DCS-BIOS: {message}")
-                        # Disabled at the moment due to drawing performance issues blocking the dcs_thread due to the GIL
-                        #if type == "check-in":
-                            #slave.update_from_json(slave_data)
+                        if type == "check-in":
+                            slave.update_from_json(slave_data)
                         else:
                             message = command.get('data', None)
 
