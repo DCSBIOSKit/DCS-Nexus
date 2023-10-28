@@ -29,8 +29,8 @@ namespace DCS_Nexus
         {
             base.OnClosed(e);
 
-            DCSCommunicator.shared.Stop();
-            SlaveCommunicator.shared.Stop();
+            // Stop all communication threads
+            CommunicationManager.Stop();
 
             Application.Current.Shutdown();
             Process.GetCurrentProcess().Kill();

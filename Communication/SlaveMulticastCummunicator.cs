@@ -6,6 +6,8 @@ using System.Net;
 using System.Text;
 using Google.Protobuf;
 
+using static DCS_Nexus.Communication.CommunicationManager;
+
 namespace DCS_Nexus.Communication {
     public class SlaveMulticastCommunicator : ICommunicator
     {
@@ -91,7 +93,7 @@ namespace DCS_Nexus.Communication {
             
             while (!stopSendThread)
             {
-                DCSMessage? message = DCSCommunicator.shared.DequeueMessage();
+                DCSMessage? message = DCSCommunicator?.DequeueMessage();
                 if (message is not null)
                 {
                     Log($"Sending message: {message.Printable}");

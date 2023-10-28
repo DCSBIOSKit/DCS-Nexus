@@ -13,8 +13,7 @@ namespace DCS_Nexus
     {
         public App() 
         {
-            DCSCommunicator.shared.Start(CommunicationType.UDP);
-            SlaveCommunicator.shared.Start(CommunicationType.Multicast);
+            CommunicationManager.Start(CommunicationType.Multicast);
         }        
     }
 }
