@@ -1,0 +1,13 @@
+syntax = "proto3";
+option csharp_namespace = "DCS_Nexus.Communication";
+
+message SlaveMessage {
+    SlaveDetails slave = 1;
+    uint32 seq = 2;
+    bytes data = 3;
+}
+
+message SlaveDetails {
+    string id = 1;
+    string mac = 2;
+}
