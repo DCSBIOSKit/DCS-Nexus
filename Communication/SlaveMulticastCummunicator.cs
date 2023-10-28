@@ -50,7 +50,7 @@ namespace DCS_Nexus.Communication {
 
         private void Receive()
         {
-            Log($"Starting {GetType().Name} receive thread");
+            /*Log($"Starting {GetType().Name} receive thread");
 
             UdpClient udpClient = new UdpClient(7779);
             udpClient.JoinMulticastGroup(IPAddress.Parse("239.255.50.10"));
@@ -68,14 +68,14 @@ namespace DCS_Nexus.Communication {
                 //Log("Received: " + message.Printable);
             }
 
-            Log($"Stopping {GetType().Name} receive thread");
+            Log($"Stopping {GetType().Name} receive thread");*/
         }
 
         private void Send()
         {
             Log($"Starting {GetType().Name} send thread");
 
-            IPAddress group = IPAddress.Parse("239.255.50.10");
+            IPAddress group = IPAddress.Parse("232.0.1.3");
             int port = 7779;
             IPEndPoint endPoint = new IPEndPoint(group, port);
 
