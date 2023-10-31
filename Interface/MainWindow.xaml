@@ -5,8 +5,43 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DCS_Nexus"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="DCSBIOSKit Nexus" Height="500" Width="670">
     <Grid>
+        <ListView Name="listView"
+        SelectionChanged="ListView_SelectionChanged"
+        MouseRightButtonUp="ListView_MouseRightButtonUp"
+        MouseDoubleClick="ListView_MouseDoubleClick">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="ToolTip" Value="{Binding Mac}" />
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="ID" Width="120" DisplayMemberBinding="{Binding ID}"/>
+                    <GridViewColumn Header="Mac Address" Width="110" DisplayMemberBinding="{Binding MacUpper}"/>
+                    <GridViewColumn Header="RSSI" Width="90" DisplayMemberBinding="{Binding RSSIText}"/>
+                    <GridViewColumn Header="Free Heap" Width="80" DisplayMemberBinding="{Binding FreeHeapKB}"/>
+                    <GridViewColumn Header="Loop Duration" Width="100" DisplayMemberBinding="{Binding LoopDurationMS}"/>
+                    <GridViewColumn Header="Frequency" Width="70" DisplayMemberBinding="{Binding CPUFrequencyMhz}"/>
+                    <GridViewColumn Header="Flash" Width="60" DisplayMemberBinding="{Binding FlashSizeMB}"/>
+                    <!--<GridViewColumn Header="Full Name" Width="300" DisplayMemberBinding="{Binding FullName}"/>
+                    <GridViewColumn Header="Progress" Width="100">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ProgressBar Value="{Binding Progress}" Maximum="100" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Age" Width="100" DisplayMemberBinding="{Binding Age}"/>-->
+                </GridView>
+            </ListView.View>
+        </ListView>
 
+        <StatusBar VerticalAlignment="Bottom">
+            <TextBlock Name="statusBarText"/>
+        </StatusBar>
+
+        <Button Name="settingsButton" Content="Settings" Width="100" Height="30" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="SettingsButton_Click"/>
     </Grid>
 </Window>
