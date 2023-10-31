@@ -5,9 +5,14 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 
+using static DCS_Nexus.Communication.CommunicationManager;
+
 namespace DCS_Nexus.Communication {
     public class DCSUDPCommunicator : ICommunicator
     {
+        UdpClient? ReceiveClient = null;
+        UdpClient? SendClient = null;
+
         private Thread? receiveThread;
         private bool stopReceiveThread = false;
         private MessageQueue<DCSMessage> receiveQueue = new(1000);
@@ -36,6 +41,10 @@ namespace DCS_Nexus.Communication {
             Log($"Stopping {GetType().Name}");
             stopReceiveThread = true;
             stopSendThread = true;
+            ReceiveClient?.Close();
+            ReceiveClient = null;
+            SendClient?.Close();
+            SendClient = null;
         }
 
         public void Send(byte[] data)
@@ -49,18 +58,25 @@ namespace DCS_Nexus.Communication {
         {
             Log($"Starting {GetType().Name} receive thread");
 
-            UdpClient udpClient = new UdpClient(5010);
-            udpClient.JoinMulticastGroup(IPAddress.Parse("239.255.50.10"));
+            ReceiveClient = new UdpClient(5010);
+            ReceiveClient?.JoinMulticastGroup(IPAddress.Parse("239.255.50.10"));
 
-            while (!stopReceiveThread)
+            while (!stopReceiveThread && ReceiveClient != null)
             {
-                IPEndPoint remoteEP = new IPEndPoint(IPAddress.Loopback, 0);
-                byte[] receivedData = udpClient.Receive(ref remoteEP);
+                try
+                {
+                    IPEndPoint remoteEP = new IPEndPoint(IPAddress.Loopback, 0);
+                    byte[] receivedData = ReceiveClient.Receive(ref remoteEP);
 
-                DCSMessage message = new DCSMessage(receivedData);
-                receiveQueue.Enqueue(message);
+                    DCSMessage message = new DCSMessage(receivedData);
+                    receiveQueue.Enqueue(message);
 
-                Log("Received: " + message.Printable);
+                    // Log("Received: " + message.Printable);
+                }
+                catch (SocketException e)
+                {
+                    Log($"Socket exception: {e.Message}");
+                }
             }
 
             Log($"Stopping {GetType().Name} receive thread");
@@ -69,10 +85,31 @@ namespace DCS_Nexus.Communication {
         private void Send()
         {
             Log($"Starting {GetType().Name} send thread");
+
+            SendClient = new UdpClient();
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 7778);
+
             while (!stopSendThread)
             {
-                Thread.Sleep(1000);
-                Log("Send thread is still alive");
+                DCSMessage? message = sendQueue.Dequeue();
+                
+                if (message is not null)
+                {
+                    try
+                    {
+                        // Get the data from the DCSMessage
+                        byte[] dataToSend = message.Data;
+
+                        // Send the data
+                        SendClient.Send(dataToSend, dataToSend.Length, endPoint);
+
+                        //Log($"Sent message with {dataToSend.Length} bytes.");
+                    }
+                    catch (SocketException e)
+                    {
+                        Log($"Socket exception: {e.Message}");
+                    }
+                }
             }
 
             Log($"Stopping {GetType().Name} send thread");

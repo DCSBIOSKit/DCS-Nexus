@@ -24,15 +24,16 @@ namespace DCS_Nexus.Communication {
     static SlaveMessageReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChJTbGF2ZU1lc3NhZ2UucHJvdG8iRwoMU2xhdmVNZXNzYWdlEhwKBXNsYXZl",
-            "GAEgASgLMg0uU2xhdmVEZXRhaWxzEgsKA3NlcRgCIAEoDRIMCgRkYXRhGAMg",
-            "ASgMIicKDFNsYXZlRGV0YWlscxIKCgJpZBgBIAEoCRILCgNtYWMYAiABKAlC",
-            "GqoCF0RDU19OZXh1cy5Db21tdW5pY2F0aW9uYgZwcm90bzM="));
+            "ChJTbGF2ZU1lc3NhZ2UucHJvdG8irgEKDFNsYXZlTWVzc2FnZRIMCgR0eXBl",
+            "GAEgASgJEgwKBGRhdGEYAiABKAwSCwoDc2VxGAMgASgNEgoKAmlkGAQgASgJ",
+            "EgsKA21hYxgFIAEoCRIMCgRyc3NpGAYgASgFEhEKCWZyZWVfaGVhcBgHIAEo",
+            "DRIVCg1sb29wX2R1cmF0aW9uGAggASgNEhAKCGNwdV9mcmVxGAkgASgNEhIK",
+            "CmZsYXNoX3NpemUYCiABKA1CGqoCF0RDU19OZXh1cy5Db21tdW5pY2F0aW9u",
+            "YgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::DCS_Nexus.Communication.SlaveMessage), global::DCS_Nexus.Communication.SlaveMessage.Parser, new[]{ "Slave", "Seq", "Data" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::DCS_Nexus.Communication.SlaveDetails), global::DCS_Nexus.Communication.SlaveDetails.Parser, new[]{ "Id", "Mac" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::DCS_Nexus.Communication.SlaveMessage), global::DCS_Nexus.Communication.SlaveMessage.Parser, new[]{ "Type", "Data", "Seq", "Id", "Mac", "Rssi", "FreeHeap", "LoopDuration", "CpuFreq", "FlashSize" }, null, null, null, null)
           }));
     }
     #endregion
@@ -73,9 +74,16 @@ namespace DCS_Nexus.Communication {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public SlaveMessage(SlaveMessage other) : this() {
-      slave_ = other.slave_ != null ? other.slave_.Clone() : null;
-      seq_ = other.seq_;
+      type_ = other.type_;
       data_ = other.data_;
+      seq_ = other.seq_;
+      id_ = other.id_;
+      mac_ = other.mac_;
+      rssi_ = other.rssi_;
+      freeHeap_ = other.freeHeap_;
+      loopDuration_ = other.loopDuration_;
+      cpuFreq_ = other.cpuFreq_;
+      flashSize_ = other.flashSize_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -85,20 +93,32 @@ namespace DCS_Nexus.Communication {
       return new SlaveMessage(this);
     }
 
-    /// <summary>Field number for the "slave" field.</summary>
-    public const int SlaveFieldNumber = 1;
-    private global::DCS_Nexus.Communication.SlaveDetails slave_;
+    /// <summary>Field number for the "type" field.</summary>
+    public const int TypeFieldNumber = 1;
+    private string type_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public global::DCS_Nexus.Communication.SlaveDetails Slave {
-      get { return slave_; }
+    public string Type {
+      get { return type_; }
       set {
-        slave_ = value;
+        type_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "data" field.</summary>
+    public const int DataFieldNumber = 2;
+    private pb::ByteString data_ = pb::ByteString.Empty;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pb::ByteString Data {
+      get { return data_; }
+      set {
+        data_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
     /// <summary>Field number for the "seq" field.</summary>
-    public const int SeqFieldNumber = 2;
+    public const int SeqFieldNumber = 3;
     private uint seq_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -109,15 +129,87 @@ namespace DCS_Nexus.Communication {
       }
     }
 
-    /// <summary>Field number for the "data" field.</summary>
-    public const int DataFieldNumber = 3;
-    private pb::ByteString data_ = pb::ByteString.Empty;
+    /// <summary>Field number for the "id" field.</summary>
+    public const int IdFieldNumber = 4;
+    private string id_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pb::ByteString Data {
-      get { return data_; }
+    public string Id {
+      get { return id_; }
       set {
-        data_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        id_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "mac" field.</summary>
+    public const int MacFieldNumber = 5;
+    private string mac_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Mac {
+      get { return mac_; }
+      set {
+        mac_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "rssi" field.</summary>
+    public const int RssiFieldNumber = 6;
+    private int rssi_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Rssi {
+      get { return rssi_; }
+      set {
+        rssi_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "free_heap" field.</summary>
+    public const int FreeHeapFieldNumber = 7;
+    private uint freeHeap_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint FreeHeap {
+      get { return freeHeap_; }
+      set {
+        freeHeap_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "loop_duration" field.</summary>
+    public const int LoopDurationFieldNumber = 8;
+    private uint loopDuration_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint LoopDuration {
+      get { return loopDuration_; }
+      set {
+        loopDuration_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "cpu_freq" field.</summary>
+    public const int CpuFreqFieldNumber = 9;
+    private uint cpuFreq_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint CpuFreq {
+      get { return cpuFreq_; }
+      set {
+        cpuFreq_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "flash_size" field.</summary>
+    public const int FlashSizeFieldNumber = 10;
+    private uint flashSize_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public uint FlashSize {
+      get { return flashSize_; }
+      set {
+        flashSize_ = value;
       }
     }
 
@@ -136,9 +228,16 @@ namespace DCS_Nexus.Communication {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (!object.Equals(Slave, other.Slave)) return false;
-      if (Seq != other.Seq) return false;
+      if (Type != other.Type) return false;
       if (Data != other.Data) return false;
+      if (Seq != other.Seq) return false;
+      if (Id != other.Id) return false;
+      if (Mac != other.Mac) return false;
+      if (Rssi != other.Rssi) return false;
+      if (FreeHeap != other.FreeHeap) return false;
+      if (LoopDuration != other.LoopDuration) return false;
+      if (CpuFreq != other.CpuFreq) return false;
+      if (FlashSize != other.FlashSize) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -146,9 +245,16 @@ namespace DCS_Nexus.Communication {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (slave_ != null) hash ^= Slave.GetHashCode();
-      if (Seq != 0) hash ^= Seq.GetHashCode();
+      if (Type.Length != 0) hash ^= Type.GetHashCode();
       if (Data.Length != 0) hash ^= Data.GetHashCode();
+      if (Seq != 0) hash ^= Seq.GetHashCode();
+      if (Id.Length != 0) hash ^= Id.GetHashCode();
+      if (Mac.Length != 0) hash ^= Mac.GetHashCode();
+      if (Rssi != 0) hash ^= Rssi.GetHashCode();
+      if (FreeHeap != 0) hash ^= FreeHeap.GetHashCode();
+      if (LoopDuration != 0) hash ^= LoopDuration.GetHashCode();
+      if (CpuFreq != 0) hash ^= CpuFreq.GetHashCode();
+      if (FlashSize != 0) hash ^= FlashSize.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -167,17 +273,45 @@ namespace DCS_Nexus.Communication {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (slave_ != null) {
+      if (Type.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteMessage(Slave);
-      }
-      if (Seq != 0) {
-        output.WriteRawTag(16);
-        output.WriteUInt32(Seq);
+        output.WriteString(Type);
       }
       if (Data.Length != 0) {
-        output.WriteRawTag(26);
+        output.WriteRawTag(18);
         output.WriteBytes(Data);
+      }
+      if (Seq != 0) {
+        output.WriteRawTag(24);
+        output.WriteUInt32(Seq);
+      }
+      if (Id.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(Id);
+      }
+      if (Mac.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Mac);
+      }
+      if (Rssi != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(Rssi);
+      }
+      if (FreeHeap != 0) {
+        output.WriteRawTag(56);
+        output.WriteUInt32(FreeHeap);
+      }
+      if (LoopDuration != 0) {
+        output.WriteRawTag(64);
+        output.WriteUInt32(LoopDuration);
+      }
+      if (CpuFreq != 0) {
+        output.WriteRawTag(72);
+        output.WriteUInt32(CpuFreq);
+      }
+      if (FlashSize != 0) {
+        output.WriteRawTag(80);
+        output.WriteUInt32(FlashSize);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -189,17 +323,45 @@ namespace DCS_Nexus.Communication {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (slave_ != null) {
+      if (Type.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteMessage(Slave);
-      }
-      if (Seq != 0) {
-        output.WriteRawTag(16);
-        output.WriteUInt32(Seq);
+        output.WriteString(Type);
       }
       if (Data.Length != 0) {
-        output.WriteRawTag(26);
+        output.WriteRawTag(18);
         output.WriteBytes(Data);
+      }
+      if (Seq != 0) {
+        output.WriteRawTag(24);
+        output.WriteUInt32(Seq);
+      }
+      if (Id.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(Id);
+      }
+      if (Mac.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Mac);
+      }
+      if (Rssi != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(Rssi);
+      }
+      if (FreeHeap != 0) {
+        output.WriteRawTag(56);
+        output.WriteUInt32(FreeHeap);
+      }
+      if (LoopDuration != 0) {
+        output.WriteRawTag(64);
+        output.WriteUInt32(LoopDuration);
+      }
+      if (CpuFreq != 0) {
+        output.WriteRawTag(72);
+        output.WriteUInt32(CpuFreq);
+      }
+      if (FlashSize != 0) {
+        output.WriteRawTag(80);
+        output.WriteUInt32(FlashSize);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -211,14 +373,35 @@ namespace DCS_Nexus.Communication {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (slave_ != null) {
-        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Slave);
+      if (Type.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Type);
+      }
+      if (Data.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Data);
       }
       if (Seq != 0) {
         size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Seq);
       }
-      if (Data.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Data);
+      if (Id.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
+      }
+      if (Mac.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Mac);
+      }
+      if (Rssi != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Rssi);
+      }
+      if (FreeHeap != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(FreeHeap);
+      }
+      if (LoopDuration != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(LoopDuration);
+      }
+      if (CpuFreq != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(CpuFreq);
+      }
+      if (FlashSize != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeUInt32Size(FlashSize);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -232,251 +415,14 @@ namespace DCS_Nexus.Communication {
       if (other == null) {
         return;
       }
-      if (other.slave_ != null) {
-        if (slave_ == null) {
-          Slave = new global::DCS_Nexus.Communication.SlaveDetails();
-        }
-        Slave.MergeFrom(other.Slave);
-      }
-      if (other.Seq != 0) {
-        Seq = other.Seq;
+      if (other.Type.Length != 0) {
+        Type = other.Type;
       }
       if (other.Data.Length != 0) {
         Data = other.Data;
       }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(pb::CodedInputStream input) {
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-      input.ReadRawMessage(this);
-    #else
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            if (slave_ == null) {
-              Slave = new global::DCS_Nexus.Communication.SlaveDetails();
-            }
-            input.ReadMessage(Slave);
-            break;
-          }
-          case 16: {
-            Seq = input.ReadUInt32();
-            break;
-          }
-          case 26: {
-            Data = input.ReadBytes();
-            break;
-          }
-        }
-      }
-    #endif
-    }
-
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
-            break;
-          case 10: {
-            if (slave_ == null) {
-              Slave = new global::DCS_Nexus.Communication.SlaveDetails();
-            }
-            input.ReadMessage(Slave);
-            break;
-          }
-          case 16: {
-            Seq = input.ReadUInt32();
-            break;
-          }
-          case 26: {
-            Data = input.ReadBytes();
-            break;
-          }
-        }
-      }
-    }
-    #endif
-
-  }
-
-  public sealed partial class SlaveDetails : pb::IMessage<SlaveDetails>
-  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-      , pb::IBufferMessage
-  #endif
-  {
-    private static readonly pb::MessageParser<SlaveDetails> _parser = new pb::MessageParser<SlaveDetails>(() => new SlaveDetails());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<SlaveDetails> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::DCS_Nexus.Communication.SlaveMessageReflection.Descriptor.MessageTypes[1]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public SlaveDetails() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public SlaveDetails(SlaveDetails other) : this() {
-      id_ = other.id_;
-      mac_ = other.mac_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public SlaveDetails Clone() {
-      return new SlaveDetails(this);
-    }
-
-    /// <summary>Field number for the "id" field.</summary>
-    public const int IdFieldNumber = 1;
-    private string id_ = "";
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string Id {
-      get { return id_; }
-      set {
-        id_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    /// <summary>Field number for the "mac" field.</summary>
-    public const int MacFieldNumber = 2;
-    private string mac_ = "";
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string Mac {
-      get { return mac_; }
-      set {
-        mac_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public override bool Equals(object other) {
-      return Equals(other as SlaveDetails);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(SlaveDetails other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (Id != other.Id) return false;
-      if (Mac != other.Mac) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (Id.Length != 0) hash ^= Id.GetHashCode();
-      if (Mac.Length != 0) hash ^= Mac.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void WriteTo(pb::CodedOutputStream output) {
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-      output.WriteRawMessage(this);
-    #else
-      if (Id.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteString(Id);
-      }
-      if (Mac.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(Mac);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    #endif
-    }
-
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (Id.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteString(Id);
-      }
-      if (Mac.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(Mac);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(ref output);
-      }
-    }
-    #endif
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int CalculateSize() {
-      int size = 0;
-      if (Id.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Id);
-      }
-      if (Mac.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Mac);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(SlaveDetails other) {
-      if (other == null) {
-        return;
+      if (other.Seq != 0) {
+        Seq = other.Seq;
       }
       if (other.Id.Length != 0) {
         Id = other.Id;
@@ -484,6 +430,21 @@ namespace DCS_Nexus.Communication {
       if (other.Mac.Length != 0) {
         Mac = other.Mac;
       }
+      if (other.Rssi != 0) {
+        Rssi = other.Rssi;
+      }
+      if (other.FreeHeap != 0) {
+        FreeHeap = other.FreeHeap;
+      }
+      if (other.LoopDuration != 0) {
+        LoopDuration = other.LoopDuration;
+      }
+      if (other.CpuFreq != 0) {
+        CpuFreq = other.CpuFreq;
+      }
+      if (other.FlashSize != 0) {
+        FlashSize = other.FlashSize;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -500,11 +461,43 @@ namespace DCS_Nexus.Communication {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            Id = input.ReadString();
+            Type = input.ReadString();
             break;
           }
           case 18: {
+            Data = input.ReadBytes();
+            break;
+          }
+          case 24: {
+            Seq = input.ReadUInt32();
+            break;
+          }
+          case 34: {
+            Id = input.ReadString();
+            break;
+          }
+          case 42: {
             Mac = input.ReadString();
+            break;
+          }
+          case 48: {
+            Rssi = input.ReadInt32();
+            break;
+          }
+          case 56: {
+            FreeHeap = input.ReadUInt32();
+            break;
+          }
+          case 64: {
+            LoopDuration = input.ReadUInt32();
+            break;
+          }
+          case 72: {
+            CpuFreq = input.ReadUInt32();
+            break;
+          }
+          case 80: {
+            FlashSize = input.ReadUInt32();
             break;
           }
         }
@@ -523,11 +516,43 @@ namespace DCS_Nexus.Communication {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 10: {
-            Id = input.ReadString();
+            Type = input.ReadString();
             break;
           }
           case 18: {
+            Data = input.ReadBytes();
+            break;
+          }
+          case 24: {
+            Seq = input.ReadUInt32();
+            break;
+          }
+          case 34: {
+            Id = input.ReadString();
+            break;
+          }
+          case 42: {
             Mac = input.ReadString();
+            break;
+          }
+          case 48: {
+            Rssi = input.ReadInt32();
+            break;
+          }
+          case 56: {
+            FreeHeap = input.ReadUInt32();
+            break;
+          }
+          case 64: {
+            LoopDuration = input.ReadUInt32();
+            break;
+          }
+          case 72: {
+            CpuFreq = input.ReadUInt32();
+            break;
+          }
+          case 80: {
+            FlashSize = input.ReadUInt32();
             break;
           }
         }

@@ -27,6 +27,12 @@ namespace DCS_Nexus.Communication {
         public static void Stop() {
             DCSCommunicator?.Stop();
             SlaveCommunicator?.Stop();
+            DCSCommunicator = null;
+            SlaveCommunicator = null;
+        }
+
+        public static bool IsRunning {
+            get => DCSCommunicator != null && SlaveCommunicator != null;
         }
     }
 }

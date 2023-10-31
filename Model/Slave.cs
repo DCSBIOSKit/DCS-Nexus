@@ -45,7 +45,7 @@ namespace DCS_Nexus.Model
             set { _free_heap = value; OnPropertyChanged(); }
         }
 
-        public string FreeHeapKB => $"{_free_heap / 1024} KB";
+        public string FreeHeapKB => $"{_free_heap / 1024:F1} KB";
 
         public int LoopDuration
         {
@@ -53,7 +53,7 @@ namespace DCS_Nexus.Model
             set { _loop_duration = value; OnPropertyChanged(); }
         }
 
-        public string LoopDurationMS => $"{_loop_duration / (double)1024} ms";
+        public string LoopDurationMS => $"{_loop_duration / (double)1024:F1} ms";
 
         public int CPUFrequency
         {

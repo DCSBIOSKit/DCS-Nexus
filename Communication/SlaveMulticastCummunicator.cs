@@ -11,6 +11,8 @@ using static DCS_Nexus.Communication.CommunicationManager;
 namespace DCS_Nexus.Communication {
     public class SlaveMulticastCommunicator : ICommunicator
     {
+        Socket? SendSocket = null;
+
         private Thread? receiveThread;
         private bool stopReceiveThread = false;
         private MessageQueue<DCSMessage> receiveQueue = new(1000);
@@ -18,6 +20,7 @@ namespace DCS_Nexus.Communication {
         private Thread? sendThread;
         private bool stopSendThread = false;
         private MessageQueue<DCSMessage> sendQueue = new(1000);
+        private MessageQueue<SlaveMessage> ackQueue = new(1000);
 
         public void Start()
         {
@@ -30,6 +33,7 @@ namespace DCS_Nexus.Communication {
 
             stopSendThread = false;
             sendQueue = new(1000);
+            ackQueue = new(1000);
             sendThread = new Thread(new ThreadStart(this.Send));
             sendThread.Start();
         }
@@ -50,25 +54,38 @@ namespace DCS_Nexus.Communication {
 
         private void Receive()
         {
-            /*Log($"Starting {GetType().Name} receive thread");
+            Log($"Starting {GetType().Name} receive thread");
 
             UdpClient udpClient = new UdpClient(7779);
-            udpClient.JoinMulticastGroup(IPAddress.Parse("239.255.50.10"));
 
             while (!stopReceiveThread)
             {
                 IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
                 byte[] receivedData = udpClient.Receive(ref remoteEP);
 
-                DCSMessage message = new DCSMessage(receivedData);
-                receiveQueue.Enqueue(message);
+                // Decode the received byte array into a SlaveMessage object
+                SlaveMessage decodedMessage = SlaveMessage.Parser.ParseFrom(receivedData);
 
-                // Log total messages
-                Log($"Received {receiveQueue.Count} messages");
-                //Log("Received: " + message.Printable);
+                // Process DCS messages
+                if (decodedMessage.Type != "check-in")
+                {
+                     // Create a DCSMessage object and enqueue it
+                    DCSMessage message = new DCSMessage(decodedMessage.Data.ToByteArray());
+                    DCSCommunicator?.EnqueueMessage(message);
+
+                    // Enqueue an ACK message
+                    ackQueue.Enqueue(new SlaveMessage {
+                        Type = "ack",
+                        Id = decodedMessage.Id,
+                        Seq = decodedMessage.Seq
+                    });
+                }
+
+                // Trigger the Received event if needed
+                Received?.Invoke(receivedData);
             }
 
-            Log($"Stopping {GetType().Name} receive thread");*/
+            Log($"Stopping {GetType().Name} receive thread");
         }
 
         private void Send()
@@ -80,35 +97,57 @@ namespace DCS_Nexus.Communication {
             IPEndPoint endPoint = new IPEndPoint(group, port);
 
             // Create socket
-            Socket udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
+            SendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
             {
                 DontFragment = true,
                 MulticastLoopback = false,
                 Ttl = 3,
                 ExclusiveAddressUse = false,
             };
-            udpSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, 0x10);
-            udpSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(group));
-            //udpSocket.Bind(new IPEndPoint(IPAddress.Any, 0)); // Not required
+            SendSocket?.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.TypeOfService, 0x10);
+            SendSocket?.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(group));
+            //SendSocket?.Bind(new IPEndPoint(IPAddress.Any, 0)); // Not required
             
-            while (!stopSendThread)
+            while (!stopSendThread && SendSocket != null)
             {
+                // Send the next ACK message in the queue
+                SlaveMessage ack = ackQueue?.Dequeue();
+                if (ack is not null)
+                {
+                    try
+                    {
+                        SendSocket?.SendTo(ack.ToByteArray(), endPoint);
+                    }
+                    catch (SocketException e)
+                    {
+                        Log($"Socket exception: {e.Message}");
+                    }
+                }
+
+                // Send the next DCS message in the queue
                 DCSMessage? message = DCSCommunicator?.DequeueMessage();
                 if (message is not null)
                 {
-                    Log($"Sending message: {message.Printable}");
-
-                    SlaveMessage slaveMessage = new SlaveMessage {
-                        Data = message.ByteString
-                    };
-                    
-                    udpSocket.SendTo(slaveMessage.ToByteArray(), endPoint);
+                    try
+                    {
+                        SlaveMessage slaveMessage = new SlaveMessage {
+                            Type = "message",
+                            Data = message.ByteString
+                        };
+                        
+                        SendSocket?.SendTo(slaveMessage.ToByteArray(), endPoint);
+                    }
+                    catch (SocketException e)
+                    {
+                        Log($"Socket exception: {e.Message}");
+                    }
                 }
             }
 
             Log($"Stopping {GetType().Name} send thread");
 
-            udpSocket.Close();
+            SendSocket?.Close();
+            SendSocket = null;
         }
 
         public bool HasMessages => throw new System.NotImplementedException();

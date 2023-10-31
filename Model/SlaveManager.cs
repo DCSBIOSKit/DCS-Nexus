@@ -10,11 +10,11 @@ namespace DCS_Nexus.Model
 
         public ObservableCollection<Slave> Slaves { get; set; } = new ObservableCollection<Slave>();
 
-        public void GenerateSampleSlaves()
+        public void GenerateMockSlaves()
         {
             for (int i = 0; i < 32; i++)
             {
-                Shared.Slaves.Add(new Slave { ID = $"slave-{i}", Mac = "00:00:00:00:00:00", RSSI = Random.Shared.Next(10, 90) * -1, FreeHeap = Random.Shared.Next(100000, 280000), LoopDuration = Random.Shared.Next(50, 100), CPUFrequency = 240, FlashSize = 8388608 });
+                Shared.Slaves.Add(new Slave { ID = $"mock-{i}", Mac = "00:00:00:00:00:00", RSSI = Random.Shared.Next(10, 90) * -1, FreeHeap = Random.Shared.Next(100000, 280000), LoopDuration = Random.Shared.Next(50, 100), CPUFrequency = 240, FlashSize = 8388608 });
             }
         }
     }
