@@ -71,6 +71,19 @@ namespace DCS_Nexus
             OnPropertyChanged(nameof(StatusText)); // Notify the UI that the property has changed
         }
 
+        private void Restart_Click(object sender, RoutedEventArgs e)
+        {
+            MenuItem menuItem = sender as MenuItem;
+            ContextMenu contextMenu = menuItem.Parent as ContextMenu;
+            ListViewItem item = contextMenu.PlacementTarget as ListViewItem;
+            Slave slave = item.DataContext as Slave;
+
+            if (slave != null)
+            {
+                // Perform the restart operation on the right-clicked slave
+            }
+        }
+
         private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             /*if (listView.SelectedItem is Slave selectedSlave)
@@ -93,9 +106,7 @@ namespace DCS_Nexus
         {
             if (listView.SelectedItem is Slave selectedSlave)
             {
-                SlaveDetailWindow detailWindow = new SlaveDetailWindow();
-                detailWindow.DataContext = selectedSlave;
-                detailWindow.Show();
+                selectedSlave.OpenDetailWindow();
             }
         }
 

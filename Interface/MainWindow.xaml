@@ -13,18 +13,25 @@
         </Grid.RowDefinitions>
 
         <ListView Grid.Row="0" Name="listView"
-        SelectionChanged="ListView_SelectionChanged"
-        MouseRightButtonUp="ListView_MouseRightButtonUp"
-        MouseDoubleClick="ListView_MouseDoubleClick">
-            <ListView.ItemContainerStyle>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="ToolTip" Value="{Binding Mac}" />
-                </Style>
-            </ListView.ItemContainerStyle>
-            <ListView.View>
+                SelectionChanged="ListView_SelectionChanged"
+                MouseDoubleClick="ListView_MouseDoubleClick">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="ToolTip" Value="{Binding Mac}" />
+                        <Setter Property="ContextMenu">
+                            <Setter.Value>
+                                <ContextMenu>
+                                    <MenuItem Header="Restart" Command="{Binding RestartCommand}"/>
+                                    <MenuItem Header="Details" Command="{Binding DetailsCommand}"/>
+                                </ContextMenu>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.View>
                 <GridView>
                     <GridViewColumn Header="ID" Width="120" DisplayMemberBinding="{Binding ID}"/>
-                    <GridViewColumn Header="Mac Address" Width="110" DisplayMemberBinding="{Binding MacUpper}"/>
+                    <GridViewColumn Header="IP Address" Width="110" DisplayMemberBinding="{Binding IPString}"/>
                     <GridViewColumn Header="RSSI" Width="90">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

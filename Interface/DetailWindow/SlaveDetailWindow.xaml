@@ -1,11 +1,88 @@
 <Window x:Class="DCS_Nexus.SlaveDetailWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Detail Window" Height="200" Width="300">
+        Title="{Binding DetailWindowTitle}" Height="375" Width="405">
     <Grid>
-        <TextBlock Text="ID:" Margin="10"/>
-        <TextBlock Text="{Binding ID}" Margin="50,10,10,10"/>
-        <TextBlock Text="Mac:" Margin="10,30,10,10"/>
-        <TextBlock Text="{Binding MacUpper}" Margin="50,30,10,10"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <GroupBox Header="Identity" Grid.Row="0" Grid.Column="0" Margin="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Text="ID:" Grid.Row="0" Grid.Column="0" Margin="10"/>
+                <TextBlock Text="{Binding ID}" Grid.Row="0" Grid.Column="1" Margin="10"/>
+
+                <TextBlock Text="IP:" Grid.Row="1" Grid.Column="0" Margin="10"/>
+                <TextBlock Text="{Binding IPString}" Grid.Row="1" Grid.Column="1" Margin="10"/>
+                
+                <TextBlock Text="Mac:" Grid.Row="2" Grid.Column="0" Margin="10"/>
+                <TextBlock Text="{Binding MacUpper}" Grid.Row="2" Grid.Column="1" Margin="10"/>
+            </Grid>
+        </GroupBox>
+        <GroupBox Header="Metrics" Grid.Row="1" Grid.Column="0" Margin="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Text="Free Heap:" Grid.Row="0" Grid.Column="0" Margin="10"/>
+                <TextBlock Text="{Binding FreeHeapKB}" Grid.Row="0" Grid.Column="1" Margin="10"/>
+
+                <TextBlock Text="Loop Duration:" Grid.Row="1" Grid.Column="0" Margin="10" ToolTip="DCS-BIOS sends data every 33ms, try to keep this well below 33ms."/>
+                <TextBlock Text="{Binding LoopDurationMS}" Grid.Row="1" Grid.Column="1" Margin="10" ToolTip="DCS-BIOS sends data every 33ms, try to keep this well below 33ms."/>
+                
+                <TextBlock Text="Frequency:" Grid.Row="2" Grid.Column="0" Margin="10"/>
+                <TextBlock Text="{Binding CPUFrequencyMhz}" Grid.Row="2" Grid.Column="1" Margin="10"/>
+                
+                <TextBlock Text="Flash:" Grid.Row="3" Grid.Column="0" Margin="10"/>
+                <TextBlock Text="{Binding FlashSizeMB}" Grid.Row="3" Grid.Column="1" Margin="10"/>
+            </Grid>
+        </GroupBox>
+        <GroupBox Header="Actions" Grid.Row="0" Grid.Column="1" Margin="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <Button Grid.Row="0" Name="restartButton" Content="Restart" Width="145" Height="30" Margin="10" Click="RestartButton_Click"/>
+            </Grid>
+        </GroupBox>
+        <GroupBox Header="Signal" Grid.Row="1" Grid.Column="1" Margin="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <ProgressBar Minimum="-100" Maximum="0" Value="{Binding RSSI}" Height="20" Width="145" Margin="10"/>
+            </Grid>
+        </GroupBox>
     </Grid>
 </Window>

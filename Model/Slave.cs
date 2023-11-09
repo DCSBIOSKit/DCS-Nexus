@@ -1,19 +1,31 @@
+using System;
 using System.ComponentModel;
+using System.Net;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
+using static Util.Logger;
 
 namespace DCS_Nexus.Model
 {
     public class Slave : INotifyPropertyChanged
     {
-        public static Slave shared = new Slave {};
+        public ICommand RestartCommand { get; set; }
+        public ICommand DetailsCommand { get; set; }
 
         private string? _id;
         private string? _mac;
+        private IPAddress? _ip;
         private int _rssi;
         private int _free_heap;
         private int _loop_duration;
         private int _cpu_freq;
         private int _flash_size;
+
+        public Slave()
+        {
+            RestartCommand = new RelayCommand(Restart);
+            DetailsCommand = new RelayCommand(OpenDetailWindow);
+        }
 
         public string ID
         {
@@ -28,6 +40,17 @@ namespace DCS_Nexus.Model
         }
 
         public string MacUpper => $"{Mac.ToUpper()}";
+
+        public IPAddress IP
+        {
+            get => _ip ?? IPAddress.None;
+            set { _ip = value; OnPropertyChanged(); }
+        }
+
+        public string IPString
+        {
+            get => _ip?.ToString() ?? "Unknown";
+        }
 
         public int RSSI
         {
@@ -75,6 +98,21 @@ namespace DCS_Nexus.Model
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        // Management Functions
+
+        public string DetailWindowTitle => $"{ID} Details";
+
+        public void OpenDetailWindow(object? parameter = null)
+        {
+            SlaveDetailWindow detailWindow = new SlaveDetailWindow(this);
+            detailWindow.Show();
+        }
+
+        public void Restart(object? parameter = null)
+        {
+            Log($"Restarting {ID}");
         }
     }
 }
