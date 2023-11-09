@@ -8,7 +8,7 @@ using System.Text;
 using static DCS_Nexus.Communication.CommunicationManager;
 
 namespace DCS_Nexus.Communication {
-    public class DCSUDPCommunicator : ICommunicator
+    public class DCSUDPAdapter : IProtocolAdapter
     {
         UdpClient? ReceiveClient = null;
         UdpClient? SendClient = null;

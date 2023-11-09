@@ -9,7 +9,7 @@ using Google.Protobuf;
 using static DCS_Nexus.Communication.CommunicationManager;
 
 namespace DCS_Nexus.Communication {
-    public class SlaveMulticastCommunicator : ICommunicator
+    public class SlaveMulticastAdapter : IProtocolAdapter
     {
         Socket? SendSocket = null;
 

@@ -8,7 +8,7 @@ namespace DCS_Nexus.Communication {
         Multicast
     }
 
-    public interface ICommunicator
+    public interface IProtocolAdapter
     {
         void Start();
         void Stop();
