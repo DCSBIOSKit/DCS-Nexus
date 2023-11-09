@@ -19,6 +19,8 @@ namespace DCS_Nexus.Communication {
         private bool stopSendThread = false;
         private MessageQueue<DCSMessage> sendQueue = new(1000);
         private MessageQueue<SlaveMessage> ackQueue = new(1000);
+        
+        public CommunicationType Type => CommunicationType.Multicast;
 
         public void Start()
         {
@@ -58,18 +60,26 @@ namespace DCS_Nexus.Communication {
 
             while (!stopReceiveThread)
             {
+                if (udpClient.Available == 0)
+                {
+                    continue;
+                }
+
                 IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+
                 byte[] receivedData = udpClient.Receive(ref remoteEP);
 
                 // Decode the received byte array into a SlaveMessage object
                 SlaveMessage decodedMessage = SlaveMessage.Parser.ParseFrom(receivedData);
+
+                // TODO: Discover and register new slaves.
 
                 // Process DCS messages
                 if (decodedMessage.Type != "check-in")
                 {
                      // Create a DCSMessage object and enqueue it
                     DCSMessage message = new DCSMessage(decodedMessage.Data.ToByteArray());
-                    DCSCommunicator?.EnqueueMessage(message);
+                    DCSAdapter?.EnqueueMessage(message);
 
                     // Enqueue an ACK message
                     ackQueue.Enqueue(new SlaveMessage {
@@ -82,6 +92,8 @@ namespace DCS_Nexus.Communication {
                 // Trigger the Received event if needed
                 Received?.Invoke(receivedData);
             }
+
+            udpClient.Close();
 
             Log($"Stopping {GetType().Name} receive thread");
         }
@@ -123,7 +135,7 @@ namespace DCS_Nexus.Communication {
                 }
 
                 // Send the next DCS message in the queue
-                DCSMessage? message = DCSCommunicator?.DequeueMessage();
+                DCSMessage? message = DCSAdapter?.DequeueMessage();
                 if (message is not null)
                 {
                     try

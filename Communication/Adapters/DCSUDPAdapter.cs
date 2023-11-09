@@ -21,6 +21,8 @@ namespace DCS_Nexus.Communication {
         private bool stopSendThread = false;
         private MessageQueue<DCSMessage> sendQueue = new(1000);
 
+        public CommunicationType Type => CommunicationType.UDP;
+
         public void Start()
         {
             Log($"Starting {GetType().Name}");

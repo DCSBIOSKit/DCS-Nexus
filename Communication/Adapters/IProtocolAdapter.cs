@@ -10,6 +10,8 @@ namespace DCS_Nexus.Communication {
 
     public interface IProtocolAdapter
     {
+        CommunicationType Type { get; }
+
         void Start();
         void Stop();
         void Send(byte[] data);

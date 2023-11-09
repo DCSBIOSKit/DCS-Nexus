@@ -88,10 +88,10 @@ namespace DCS_Nexus
 
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            // Open settings dialog or perform other action
-            // MessageBox.Show("Settings clicked");
+            SettingsWindow settingsWindow = new SettingsWindow();
+            settingsWindow.Show();
 
-            SlaveManager.GenerateMockSlaves();
+            //SlaveManager.GenerateMockSlaves();
         }
 
         private void StartStopButton_Click(object sender, RoutedEventArgs e)
@@ -103,7 +103,8 @@ namespace DCS_Nexus
             }
             else
             {
-                CommunicationManager.Start(CommunicationType.Multicast);
+                // TODO: Read from Settings
+                CommunicationManager.Start(CommunicationType.UDP, CommunicationType.Multicast);
                 startStopButton.Content = "Stop";
             }
         }

@@ -13,7 +13,8 @@ namespace DCS_Nexus
     {
         public App() 
         {
-            CommunicationManager.Start(CommunicationType.Multicast);
+            // TODO: Read from Settings
+            CommunicationManager.Start(CommunicationType.UDP, CommunicationType.Multicast);
         }        
     }
 }

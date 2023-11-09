@@ -2,37 +2,67 @@ using DCS_Nexus.Communication;
 
 namespace DCS_Nexus.Communication {
     public class CommunicationManager {
-        public static IProtocolAdapter? DCSCommunicator;
-        public static IProtocolAdapter? SlaveCommunicator;
+        public static IProtocolAdapter? DCSAdapter;
+        public static IProtocolAdapter? SlaveAdapter;
 
-        public static void Start(CommunicationType type) {
+        public static void Start(CommunicationType DCSType, CommunicationType SlaveType) {
+            StartDCS(DCSType);
+            StartSlaves(SlaveType);
+        }
+
+        public static void StartDCS(CommunicationType type)
+        {
+            switch (type)
+            {
+                case CommunicationType.TCP:
+                    throw new System.NotImplementedException();
+                case CommunicationType.UDP:
+                    DCSAdapter = new DCSUDPAdapter();
+                    DCSAdapter.Start();
+                    break;
+                case CommunicationType.Multicast:
+                    throw new System.NotSupportedException();
+                default:
+                    throw new System.NotImplementedException();
+
+            }
+        }
+
+        public static void StartSlaves(CommunicationType type)
+        {
             switch (type) {
                 case CommunicationType.TCP:
                     throw new System.NotImplementedException();
                 case CommunicationType.UDP:
-                    DCSCommunicator = new DCSUDPAdapter();
-                    DCSCommunicator.Start();
                     throw new System.NotImplementedException();
                 case CommunicationType.Multicast:
-                    DCSCommunicator = new DCSUDPAdapter();
-                    DCSCommunicator.Start();
-                    SlaveCommunicator = new SlaveMulticastAdapter();
-                    SlaveCommunicator.Start();
+                    SlaveAdapter = new SlaveMulticastAdapter();
+                    SlaveAdapter.Start();
                     break;
                 default:
                     throw new System.NotImplementedException();
             }
         }
 
-        public static void Stop() {
-            DCSCommunicator?.Stop();
-            SlaveCommunicator?.Stop();
-            DCSCommunicator = null;
-            SlaveCommunicator = null;
+        public static void Stop()
+        {
+            StopDCS();
+            StopSlaves();
+        }
+
+        public static void StopDCS()
+        {
+            DCSAdapter?.Stop();
+            DCSAdapter = null;
+        }
+
+        public static void StopSlaves() {
+            SlaveAdapter?.Stop();
+            SlaveAdapter = null;
         }
 
         public static bool IsRunning {
-            get => DCSCommunicator != null && SlaveCommunicator != null;
+            get => DCSAdapter != null && SlaveAdapter != null;
         }
     }
 }
