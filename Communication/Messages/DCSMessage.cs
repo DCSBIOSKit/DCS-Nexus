@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using DCS_Nexus.Model;
 
 namespace DCS_Nexus {
     public class DCSMessage

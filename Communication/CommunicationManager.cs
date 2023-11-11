@@ -1,4 +1,5 @@
 using DCS_Nexus.Communication;
+using DCS_Nexus.Model;
 
 namespace DCS_Nexus.Communication {
     public class CommunicationManager {
@@ -64,5 +65,10 @@ namespace DCS_Nexus.Communication {
         public static bool IsRunning {
             get => DCSAdapter != null && SlaveAdapter != null;
         }
+
+        public static void SendSlaveMessage(SlaveMessage message)
+        {
+            SlaveAdapter?.EnqueueMessage(message);
+        }   
     }
 }

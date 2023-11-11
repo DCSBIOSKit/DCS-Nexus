@@ -1,4 +1,5 @@
 using System;
+using DCS_Nexus.Model;
 
 namespace DCS_Nexus.Communication {
     public enum CommunicationType
@@ -21,5 +22,6 @@ namespace DCS_Nexus.Communication {
         DCSMessage? DequeueMessage();
         
         void EnqueueMessage(DCSMessage message);
+        void EnqueueMessage(SlaveMessage message) {}
     }
 }

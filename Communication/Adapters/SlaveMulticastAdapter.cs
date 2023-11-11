@@ -5,6 +5,9 @@ using System.Net;
 using Google.Protobuf;
 
 using static DCS_Nexus.Communication.CommunicationManager;
+using System.Windows;
+using DCS_Nexus.Model;
+using System;
 
 namespace DCS_Nexus.Communication {
     public class SlaveMulticastAdapter : IProtocolAdapter
@@ -17,8 +20,8 @@ namespace DCS_Nexus.Communication {
 
         private Thread? sendThread;
         private bool stopSendThread = false;
-        private MessageQueue<DCSMessage> sendQueue = new(1000);
-        private MessageQueue<SlaveMessage> ackQueue = new(1000);
+        private MessageQueue<DCSMessage> dcsMessageQueue = new(1000);
+        private MessageQueue<SlaveMessage> slaveMessageQueue = new(1000);
         
         public CommunicationType Type => CommunicationType.Multicast;
 
@@ -32,8 +35,8 @@ namespace DCS_Nexus.Communication {
             receiveThread.Start();
 
             stopSendThread = false;
-            sendQueue = new(1000);
-            ackQueue = new(1000);
+            dcsMessageQueue = new(1000);
+            slaveMessageQueue = new(1000);
             sendThread = new Thread(new ThreadStart(this.Send));
             sendThread.Start();
         }
@@ -72,7 +75,21 @@ namespace DCS_Nexus.Communication {
                 // Decode the received byte array into a SlaveMessage object
                 SlaveMessage decodedMessage = SlaveMessage.Parser.ParseFrom(receivedData);
 
-                // TODO: Discover and register new slaves.
+                // Create or update the slave object
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Slave? slave = SlaveManager.FindSlaveByMacAddress(decodedMessage.Mac);
+                    
+                    if (slave is null)
+                    {
+                        slave = new Slave(decodedMessage, remoteEP.Address);
+                        SlaveManager.Shared.Slaves.Add(slave);
+                    }
+                    else
+                    {
+                        slave.Update(decodedMessage, remoteEP.Address);
+                    }
+                });
 
                 // Process DCS messages
                 if (decodedMessage.Type != "check-in")
@@ -82,7 +99,7 @@ namespace DCS_Nexus.Communication {
                     DCSAdapter?.EnqueueMessage(message);
 
                     // Enqueue an ACK message
-                    ackQueue.Enqueue(new SlaveMessage {
+                    slaveMessageQueue.Enqueue(new SlaveMessage {
                         Type = "ack",
                         Id = decodedMessage.Id,
                         Seq = decodedMessage.Seq
@@ -118,10 +135,12 @@ namespace DCS_Nexus.Communication {
             SendSocket?.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.AddMembership, new MulticastOption(group));
             //SendSocket?.Bind(new IPEndPoint(IPAddress.Any, 0)); // Not required
             
+            DateTime lastCheckInTime = DateTime.MinValue;
+            
             while (!stopSendThread && SendSocket != null)
             {
-                // Send the next ACK message in the queue
-                SlaveMessage ack = ackQueue?.Dequeue();
+                // Send the next ACK/slave message in the queue
+                SlaveMessage ack = slaveMessageQueue?.Dequeue();
                 if (ack is not null)
                 {
                     try
@@ -152,6 +171,27 @@ namespace DCS_Nexus.Communication {
                         Log($"Socket exception: {e.Message}");
                     }
                 }
+
+                // Send a check-in message every second
+                DateTime currentTime = DateTime.Now;
+
+                if ((currentTime - lastCheckInTime).TotalSeconds >= 1)
+                {
+                    // Send check-in message
+                    SlaveMessage checkInMessage = new SlaveMessage {
+                        Type = "check-in",
+                    };
+
+                    try
+                    {
+                        SendSocket?.SendTo(checkInMessage.ToByteArray(), endPoint);
+                        lastCheckInTime = currentTime; // Update the last check-in time
+                    }
+                    catch (SocketException e)
+                    {
+                        Log($"Socket exception: {e.Message}");
+                    }
+                }
             }
 
             Log($"Stopping {GetType().Name} send thread");
@@ -170,7 +210,13 @@ namespace DCS_Nexus.Communication {
         public void EnqueueMessage(DCSMessage message)
         {
             Log($"Enqueueing message: {message.Printable}");
-            sendQueue.Enqueue(message);
+            dcsMessageQueue.Enqueue(message);
+        }
+        
+        public void EnqueueMessage(SlaveMessage message)
+        {
+            Log($"Enqueueing message: {message.Type} to {message.Id}");
+            slaveMessageQueue.Enqueue(message);
         }
     }
 }

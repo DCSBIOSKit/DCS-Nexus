@@ -43,9 +43,9 @@ namespace DCS_Nexus
                 Log(ex.ToString());
             }
 
-            SlaveManager.GenerateMockSlaves();
             SlaveManager.Slaves.CollectionChanged += Slaves_CollectionChanged;
             listView.ItemsSource = SlaveManager.Slaves;
+            //SlaveManager.GenerateMockSlaves();
             UpdateStatusText();
         }
 
