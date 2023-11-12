@@ -13,8 +13,10 @@ namespace DCS_Nexus
     {
         public App() 
         {
-            // TODO: Read from Settings
-            CommunicationManager.Start(CommunicationType.UDP, CommunicationType.Multicast);
-        }        
+            CommunicationType dcsType = Settings.Default.DCSCommunicationType;
+            CommunicationType slaveType = Settings.Default.SlaveCommunicationType;
+
+            CommunicationManager.Start(dcsType, slaveType);
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using DCS_Nexus.Communication;
@@ -55,6 +56,8 @@ namespace DCS_Nexus
                         CommunicationManager.StartDCS(CommunicationType.UDP);
                         break;
                 }
+
+                Settings.Default.DCSCommunicationType = (CommunicationType)Enum.Parse(typeof(CommunicationType), selectedText);
             }
         }
 
@@ -69,8 +72,8 @@ namespace DCS_Nexus
                 switch (selectedText)
                 {
                     case "TCP":
-                        MessageBox.Show("TCP mode is coming soon.");
-                        comboBox.SelectedIndex = 2;
+                        CommunicationManager.StopSlaves();
+                        CommunicationManager.StartSlaves(CommunicationType.TCP);
                         break;
                     case "UDP":
                         MessageBox.Show("UDP mode is coming soon.");
@@ -82,6 +85,8 @@ namespace DCS_Nexus
                         CommunicationManager.StartSlaves(CommunicationType.Multicast);
                         break;
                 }
+
+                Settings.Default.SlaveCommunicationType = (CommunicationType)Enum.Parse(typeof(CommunicationType), selectedText);
             }
         }
     }

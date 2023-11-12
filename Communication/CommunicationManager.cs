@@ -33,7 +33,9 @@ namespace DCS_Nexus.Communication {
         {
             switch (type) {
                 case CommunicationType.TCP:
-                    throw new System.NotImplementedException();
+                    SlaveAdapter = new SlaveTCPAdapter();
+                    SlaveAdapter.Start();
+                    break;
                 case CommunicationType.UDP:
                     throw new System.NotImplementedException();
                 case CommunicationType.Multicast:

@@ -5,7 +5,7 @@ namespace DCS_Nexus {
         private ConcurrentQueue<T> _messageQueue;
         private uint _limit;
 
-        public MessageQueue(uint limit = 1000) {
+        public MessageQueue(uint limit) {
             _messageQueue = new ConcurrentQueue<T>();
             _limit = limit;
         }

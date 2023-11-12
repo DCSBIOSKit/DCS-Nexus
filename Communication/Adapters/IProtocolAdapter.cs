@@ -15,7 +15,6 @@ namespace DCS_Nexus.Communication {
 
         void Start();
         void Stop();
-        void Send(byte[] data);
         event Action<byte[]> Received;
 
         bool HasMessages { get; }

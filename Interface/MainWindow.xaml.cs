@@ -113,6 +113,8 @@ namespace DCS_Nexus
         {
             base.OnClosed(e);
 
+            Settings.Default.Save();
+
             // Stop all communication threads
             CommunicationManager.Stop();
 

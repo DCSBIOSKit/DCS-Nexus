@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Data;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using DCS_Nexus.Communication;
@@ -15,6 +16,7 @@ namespace DCS_Nexus.Model
         public ICommand DetailsCommand { get; private set; }
         public DateTime LastSeen { get; private set; } = DateTime.UtcNow;
         public DateTime LastSent { get; private set; } = DateTime.UtcNow;
+        public TcpClient? TCPClient;
 
         private string? _id;
         private string? _mac;
@@ -25,14 +27,19 @@ namespace DCS_Nexus.Model
         private uint _cpuFreq;
         private uint _flashSize;
         
-        public Slave(SlaveMessage? message = null, IPAddress? ipAddress = null) {
+        public Slave(SlaveMessage? message = null, IPAddress? ipAddress = null, TcpClient? tcpClient = null) {
             RestartCommand = new RelayCommand(Restart);
             DetailsCommand = new RelayCommand(OpenDetailWindow);
 
-            Update(message, ipAddress);
+            Update(message, ipAddress, tcpClient);
         }
 
-        public void Update(SlaveMessage? message, IPAddress? ipAddress) {
+        public void Update(SlaveMessage? message, IPAddress? ipAddress, TcpClient? tcpClient = null) {
+            if (tcpClient is not null)
+            {
+                TCPClient = tcpClient;
+            }
+
             if (message != null)
             {
                 ID = !string.IsNullOrEmpty(message.Id) ? message.Id : ID;

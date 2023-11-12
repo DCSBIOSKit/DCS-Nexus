@@ -14,14 +14,18 @@ namespace DCS_Nexus.Communication {
     {
         Socket? SendSocket = null;
 
+        const int receiveQueueSize = 256;
+        const int dcsMessageQueueSize = 10;
+        const int slaveMessageQueueSize = 10;
+
         private Thread? receiveThread;
         private bool stopReceiveThread = false;
-        private MessageQueue<DCSMessage> receiveQueue = new(1000);
+        private MessageQueue<DCSMessage> receiveQueue = new(receiveQueueSize);
 
         private Thread? sendThread;
         private bool stopSendThread = false;
-        private MessageQueue<DCSMessage> dcsMessageQueue = new(1000);
-        private MessageQueue<SlaveMessage> slaveMessageQueue = new(1000);
+        private MessageQueue<DCSMessage> dcsMessageQueue = new(dcsMessageQueueSize);
+        private MessageQueue<SlaveMessage> slaveMessageQueue = new(slaveMessageQueueSize);
         
         public CommunicationType Type => CommunicationType.Multicast;
 
@@ -30,13 +34,13 @@ namespace DCS_Nexus.Communication {
             Log($"Starting {GetType().Name}");
 
             stopReceiveThread = false;
-            receiveQueue = new(1000);
+            receiveQueue = new(receiveQueueSize);
             receiveThread = new Thread(new ThreadStart(this.Receive));
             receiveThread.Start();
 
             stopSendThread = false;
-            dcsMessageQueue = new(1000);
-            slaveMessageQueue = new(1000);
+            dcsMessageQueue = new(dcsMessageQueueSize);
+            slaveMessageQueue = new(slaveMessageQueueSize);
             sendThread = new Thread(new ThreadStart(this.Send));
             sendThread.Start();
         }
@@ -48,29 +52,24 @@ namespace DCS_Nexus.Communication {
             stopSendThread = true;
         }
 
-        public void Send(byte[] data)
-        {
-            throw new System.NotImplementedException();
-        }
-
         public event System.Action<byte[]>? Received = delegate {};
 
         private void Receive()
         {
             Log($"Starting {GetType().Name} receive thread");
 
-            UdpClient udpClient = new UdpClient(7779);
+            UdpClient client = new UdpClient(7779);
 
             while (!stopReceiveThread)
             {
-                if (udpClient.Available == 0)
+                if (client.Available == 0)
                 {
                     continue;
                 }
 
                 IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
 
-                byte[] receivedData = udpClient.Receive(ref remoteEP);
+                byte[] receivedData = client.Receive(ref remoteEP);
 
                 // Decode the received byte array into a SlaveMessage object
                 SlaveMessage decodedMessage = SlaveMessage.Parser.ParseFrom(receivedData);
@@ -110,7 +109,7 @@ namespace DCS_Nexus.Communication {
                 Received?.Invoke(receivedData);
             }
 
-            udpClient.Close();
+            client.Close();
 
             Log($"Stopping {GetType().Name} receive thread");
         }

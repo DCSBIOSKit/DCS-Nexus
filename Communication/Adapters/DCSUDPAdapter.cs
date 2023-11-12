@@ -10,16 +10,19 @@ using static DCS_Nexus.Communication.CommunicationManager;
 namespace DCS_Nexus.Communication {
     public class DCSUDPAdapter : IProtocolAdapter
     {
+        const int receiveQueueSize = 5; // Has to be kept small to avoid TCP slaves from running out of memory.
+        const int sendQueueSize = 128;
+
         UdpClient? ReceiveClient = null;
         UdpClient? SendClient = null;
 
         private Thread? receiveThread;
         private bool stopReceiveThread = false;
-        private MessageQueue<DCSMessage> receiveQueue = new(1000);
+        private MessageQueue<DCSMessage> receiveQueue = new(receiveQueueSize);
 
         private Thread? sendThread;
         private bool stopSendThread = false;
-        private MessageQueue<DCSMessage> sendQueue = new(1000);
+        private MessageQueue<DCSMessage> sendQueue = new(sendQueueSize);
 
         public CommunicationType Type => CommunicationType.UDP;
 
@@ -28,12 +31,12 @@ namespace DCS_Nexus.Communication {
             Log($"Starting {GetType().Name}");
             
             stopReceiveThread = false;
-            receiveQueue = new(1000);
+            receiveQueue = new(receiveQueueSize);
             receiveThread = new Thread(new ThreadStart(this.Receive));
             receiveThread.Start();
 
             stopSendThread = false;
-            sendQueue = new(1000);
+            sendQueue = new(sendQueueSize);
             sendThread = new Thread(new ThreadStart(this.Send));
             sendThread.Start();
         }
