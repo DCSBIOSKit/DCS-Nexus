@@ -1,0 +1,15 @@
+syntax = "proto3";
+option csharp_namespace = "DCS_Nexus.Communication";
+
+message SlaveMessage {
+    string type = 1;
+    bytes data = 2;
+    uint32 seq = 3;
+    string id = 4;
+    string mac = 5;
+    int32 rssi = 6;
+    uint32 free_heap = 7;
+    uint32 loop_duration = 8;
+    uint32 cpu_freq = 9;
+    uint32 flash_size = 10;
+}

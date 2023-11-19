@@ -1,0 +1,48 @@
+﻿<Application x:Class="DCS_Nexus.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:DCS_Nexus"
+             StartupUri="Interface/MainWindow.xaml">
+    <Application.Resources>
+        <!-- Dark Theme -->
+        <!--<SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FF252525"/>
+        <SolidColorBrush x:Key="WindowTextBrush" Color="White"/>
+        <SolidColorBrush x:Key="ButtonFaceBrush" Color="#FF333333"/>
+        <SolidColorBrush x:Key="ButtonTextBrush" Color="White"/>
+        <SolidColorBrush x:Key="ListBackgroundBrush" Color="#FF333333"/>
+        <SolidColorBrush x:Key="ListForegroundBrush" Color="White"/>
+        <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#FF444444"/>
+        <SolidColorBrush x:Key="HeaderForegroundBrush" Color="White"/>
+        <SolidColorBrush x:Key="TextBoxBackgroundBrush" Color="#FF333333"/>
+        <SolidColorBrush x:Key="TextBoxForegroundBrush" Color="White"/>
+
+        <Style TargetType="{x:Type Window}">
+            <Setter Property="Background" Value="{StaticResource WindowBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource WindowTextBrush}"/>
+        </Style>
+        
+        <Style TargetType="{x:Type TextBlock}">
+            <Setter Property="Foreground" Value="{StaticResource WindowTextBrush}"/>
+        </Style>
+        
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="{StaticResource ButtonFaceBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource ButtonTextBrush}"/>
+        </Style>
+        
+        <Style TargetType="{x:Type ListView}">
+            <Setter Property="Background" Value="{StaticResource ListBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource ListForegroundBrush}"/>
+        </Style>
+        
+        <Style TargetType="{x:Type GridViewColumnHeader}">
+            <Setter Property="Background" Value="{StaticResource HeaderBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource HeaderForegroundBrush}"/>
+        </Style>
+        
+        <Style TargetType="{x:Type TextBox}">
+            <Setter Property="Background" Value="{StaticResource TextBoxBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBoxForegroundBrush}"/>
+        </Style>-->
+    </Application.Resources>
+</Application>

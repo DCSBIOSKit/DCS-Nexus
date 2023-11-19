@@ -1,0 +1,61 @@
+﻿<Window x:Class="DCS_Nexus.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DCS_Nexus"
+        mc:Ignorable="d"
+        Title="DCSBIOSKit Nexus" Height="500" Width="670">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>  <!-- ListView will take up remaining space -->
+            <RowDefinition Height="Auto"/>  <!-- Toolbar will take up only the space it needs -->
+        </Grid.RowDefinitions>
+
+        <ListView Grid.Row="0" Name="listView"
+                SelectionChanged="ListView_SelectionChanged"
+                MouseDoubleClick="ListView_MouseDoubleClick">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="ToolTip" Value="{Binding Mac}" />
+                        <Setter Property="ContextMenu">
+                            <Setter.Value>
+                                <ContextMenu>
+                                    <MenuItem Header="Restart" Command="{Binding RestartCommand}"/>
+                                    <MenuItem Header="Details" Command="{Binding DetailsCommand}"/>
+                                </ContextMenu>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="ID" Width="120" DisplayMemberBinding="{Binding ID}"/>
+                    <GridViewColumn Header="IP Address" Width="110" DisplayMemberBinding="{Binding IPString}"/>
+                    <GridViewColumn Header="RSSI" Width="90">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ProgressBar Minimum="-100" Maximum="0" Value="{Binding RSSI}" Height="20" Width="75" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Free Heap" Width="80" DisplayMemberBinding="{Binding FreeHeapKB}"/>
+                    <GridViewColumn Header="Loop Duration" Width="100" DisplayMemberBinding="{Binding LoopDurationMS}"/>
+                    <GridViewColumn Header="Frequency" Width="70" DisplayMemberBinding="{Binding CPUFrequencyMhz}"/>
+                    <GridViewColumn Header="Flash" Width="60" DisplayMemberBinding="{Binding FlashSizeMB}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" HorizontalAlignment="Left" Name="startStopButton" Content="Stop" Width="100" Height="30" Click="StartStopButton_Click"/>
+            <TextBlock Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Name="statusBarText" Text="{Binding StatusText}"/>
+            <Button Grid.Column="2" HorizontalAlignment="Right" Name="settingsButton" Content="Settings" Width="100" Height="30" Click="SettingsButton_Click"/>
+        </Grid>
+    </Grid>
+</Window>
