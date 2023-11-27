@@ -1,3 +1,5 @@
+!include MUI2.nsh
+
 ; Define the name of your installer
 Outfile "DCS-NexusInstaller.exe"
 
