@@ -2,4 +2,4 @@
 [Bb]in/
 settings.json
 DCS-NexusInstaller.exe
-.DS_Store
+*.DS_Store
