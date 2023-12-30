@@ -117,6 +117,8 @@ namespace DCS_Nexus.Communication {
                         Log($"Socket exception: {e.Message}");
                     }
                 }
+
+                Thread.Sleep(2);
             }
 
             Log($"Stopping {GetType().Name} send thread");
