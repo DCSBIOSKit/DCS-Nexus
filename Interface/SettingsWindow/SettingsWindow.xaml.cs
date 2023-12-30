@@ -11,44 +11,31 @@ namespace DCS_Nexus
         public SettingsWindow()
         {
             InitializeComponent();
+            InitializeSettings();
+        }
 
-            switch (CommunicationManager.DCSAdapter?.Type)
-            {
-                case CommunicationType.TCP:
-                    DCSModeComboBox.SelectedIndex = 0;
-                    break;
-                case CommunicationType.UDP:
-                    DCSModeComboBox.SelectedIndex = 1;
-                    break;
-            }
+        private void InitializeSettings()
+        {
+            // Initialize DCS Mode ComboBox
+            DCSModeComboBox.SelectedIndex = (int)Settings.Default.DCSCommunicationType;
 
-            switch (CommunicationManager.SlaveAdapter?.Type)
-            {
-                case CommunicationType.TCP:
-                    SlaveModeComboBox.SelectedIndex = 0;
-                    break;
-                case CommunicationType.UDP:
-                    SlaveModeComboBox.SelectedIndex = 1;
-                    break;
-                case CommunicationType.Multicast:
-                    SlaveModeComboBox.SelectedIndex = 2;
-                    break;
-            }
+            // Initialize Slave Communication Checkboxes
+            TCPCheckBox.IsChecked = Settings.Default.SlaveCommunicationTypes.Contains(CommunicationType.TCP);
+            UDPCheckBox.IsChecked = Settings.Default.SlaveCommunicationTypes.Contains(CommunicationType.UDP);
+            MulticastCheckBox.IsChecked = Settings.Default.SlaveCommunicationTypes.Contains(CommunicationType.Multicast);
         }
 
         private void DCSMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var comboBox = sender as ComboBox;
-            var selectedItem = comboBox.SelectedItem as ComboBoxItem;
-            if (selectedItem != null)
+            if (DCSModeComboBox.SelectedItem is ComboBoxItem selectedItem)
             {
-                string selectedText = selectedItem.Content.ToString();
+                var selectedText = selectedItem.Content.ToString();
 
                 switch (selectedText)
                 {
                     case "TCP":
                         MessageBox.Show("TCP mode is coming soon.");
-                        comboBox.SelectedIndex = 1;
+                        DCSModeComboBox.SelectedIndex = 1; // Defaulting to UDP if TCP is not implemented
                         break;
                     case "UDP":
                         Log("Switching DCS to UDP mode");
@@ -58,35 +45,40 @@ namespace DCS_Nexus
                 }
 
                 Settings.Default.DCSCommunicationType = (CommunicationType)Enum.Parse(typeof(CommunicationType), selectedText);
+                Settings.Default.Save();
             }
         }
 
-        private void SlaveMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void SlaveMode_Checked(object sender, RoutedEventArgs e)
         {
-            var comboBox = sender as ComboBox;
-            var selectedItem = comboBox.SelectedItem as ComboBoxItem;
-            if (selectedItem != null)
+            UpdateSlaveCommunicationTypes();
+        }
+
+        private void SlaveMode_Unchecked(object sender, RoutedEventArgs e)
+        {
+            UpdateSlaveCommunicationTypes();
+        }
+
+        private void UpdateSlaveCommunicationTypes()
+        {
+            Settings.Default.SlaveCommunicationTypes.Clear();
+
+            if (TCPCheckBox.IsChecked == true)
+                Settings.Default.SlaveCommunicationTypes.Add(CommunicationType.TCP);
+
+            if (UDPCheckBox.IsChecked == true)
+                Settings.Default.SlaveCommunicationTypes.Add(CommunicationType.UDP);
+
+            if (MulticastCheckBox.IsChecked == true)
+                Settings.Default.SlaveCommunicationTypes.Add(CommunicationType.Multicast);
+
+            Settings.Default.Save();
+
+            // Restart slave communications with new settings
+            CommunicationManager.StopSlaves();
+            foreach (var type in Settings.Default.SlaveCommunicationTypes)
             {
-                string selectedText = selectedItem.Content.ToString();
-
-                switch (selectedText)
-                {
-                    case "TCP":
-                        CommunicationManager.StopSlaves();
-                        CommunicationManager.StartSlaves(CommunicationType.TCP);
-                        break;
-                    case "UDP":
-                        MessageBox.Show("UDP mode is coming soon.");
-                        comboBox.SelectedIndex = 2;
-                        break;
-                    case "Multicast":
-                        Log("Switching Slaves to Multicast mode");
-                        CommunicationManager.StopSlaves();
-                        CommunicationManager.StartSlaves(CommunicationType.Multicast);
-                        break;
-                }
-
-                Settings.Default.SlaveCommunicationType = (CommunicationType)Enum.Parse(typeof(CommunicationType), selectedText);
+                CommunicationManager.StartSlaves(type);
             }
         }
     }

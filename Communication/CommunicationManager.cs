@@ -1,14 +1,16 @@
 using DCS_Nexus.Communication;
 using DCS_Nexus.Model;
+using System.Collections.Generic;
 
 namespace DCS_Nexus.Communication {
     public class CommunicationManager {
         public static IProtocolAdapter? DCSAdapter;
-        public static IProtocolAdapter? SlaveAdapter;
+        public static List<IProtocolAdapter> SlaveAdapters = new List<IProtocolAdapter>();
 
-        public static void Start(CommunicationType DCSType, CommunicationType SlaveType) {
+        public static void Start(CommunicationType DCSType, params CommunicationType[] SlaveTypes)
+        {
             StartDCS(DCSType);
-            StartSlaves(SlaveType);
+            StartSlaves(SlaveTypes);
         }
 
         public static void StartDCS(CommunicationType type)
@@ -29,21 +31,29 @@ namespace DCS_Nexus.Communication {
             }
         }
 
-        public static void StartSlaves(CommunicationType type)
+        public static void StartSlaves(params CommunicationType[] types)
         {
-            switch (type) {
-                case CommunicationType.TCP:
-                    SlaveAdapter = new SlaveTCPAdapter();
-                    SlaveAdapter.Start();
-                    break;
-                case CommunicationType.UDP:
-                    throw new System.NotImplementedException();
-                case CommunicationType.Multicast:
-                    SlaveAdapter = new SlaveMulticastAdapter();
-                    SlaveAdapter.Start();
-                    break;
-                default:
-                    throw new System.NotImplementedException();
+            foreach (var type in types)
+            {
+                switch (type)
+                {
+                    case CommunicationType.TCP:
+                        SlaveAdapters.Add(new SlaveTCPAdapter());
+                        break;
+                    case CommunicationType.UDP:
+                        // Implement UDP adapter initialization if needed
+                        break;
+                    case CommunicationType.Multicast:
+                        SlaveAdapters.Add(new SlaveMulticastAdapter());
+                        break;
+                    default:
+                        throw new System.NotImplementedException();
+                }
+            }
+
+            foreach (var adapter in SlaveAdapters)
+            {
+                adapter.Start();
             }
         }
 
@@ -59,18 +69,26 @@ namespace DCS_Nexus.Communication {
             DCSAdapter = null;
         }
 
-        public static void StopSlaves() {
-            SlaveAdapter?.Stop();
-            SlaveAdapter = null;
+        public static void StopSlaves()
+        {
+            foreach (var adapter in SlaveAdapters)
+            {
+                adapter.Stop();
+            }
+            SlaveAdapters.Clear();
         }
 
-        public static bool IsRunning {
-            get => DCSAdapter != null && SlaveAdapter != null;
+        public static bool IsRunning
+        {
+            get => DCSAdapter != null && SlaveAdapters.Count > 0;
         }
 
         public static void SendSlaveMessage(SlaveMessage message)
         {
-            SlaveAdapter?.EnqueueMessage(message);
-        }   
+            foreach (var adapter in SlaveAdapters)
+            {
+                adapter.EnqueueMessage(message);
+            }
+        }
     }
 }

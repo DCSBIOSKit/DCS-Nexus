@@ -1,22 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.Windows;
-using DCS_Nexus.Communication;  // Fixed syntax
+using DCS_Nexus.Communication;
 
 namespace DCS_Nexus
 {
     public partial class App : Application
     {
-        public App() 
+        public App()
         {
             CommunicationType dcsType = Settings.Default.DCSCommunicationType;
-            CommunicationType slaveType = Settings.Default.SlaveCommunicationType;
+            List<CommunicationType> slaveTypes = Settings.Default.SlaveCommunicationTypes;
 
-            CommunicationManager.Start(dcsType, slaveType);
+            CommunicationManager.Start(dcsType, slaveTypes.ToArray());
         }
     }
 }
