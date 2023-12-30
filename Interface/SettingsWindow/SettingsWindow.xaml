@@ -19,7 +19,7 @@
                 </ComboBox>
                 <TextBlock Text="Slave Modes:"/>
                 <CheckBox Name="TCPCheckBox" Content="TCP" Checked="SlaveMode_Checked" Unchecked="SlaveMode_Unchecked"/>
-                <CheckBox Name="UDPCheckBox" Content="UDP" Checked="SlaveMode_Checked" Unchecked="SlaveMode_Unchecked"/>
+                <CheckBox Name="UDPCheckBox" Content="UDP" Checked="SlaveMode_Checked" Unchecked="SlaveMode_Unchecked" IsEnabled="False"/>
                 <CheckBox Name="MulticastCheckBox" Content="Multicast" Checked="SlaveMode_Checked" Unchecked="SlaveMode_Unchecked"/>
                 <TextBlock Text="DCS Mode may be changed at any time, Slave mode must match the mode during build time in Arduino IDE. To change the Slave Mode, you must reflash all your slaves." TextWrapping="Wrap" FontSize="10"/>
             </StackPanel>

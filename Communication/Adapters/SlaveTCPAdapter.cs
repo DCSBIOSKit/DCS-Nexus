@@ -3,12 +3,11 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Net;
 using Google.Protobuf;
-
+using static DCS_Nexus.Model.GlobalConstants;
 using static DCS_Nexus.Communication.CommunicationManager;
 using System.Windows;
 using DCS_Nexus.Model;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Collections.Concurrent;
@@ -56,7 +55,7 @@ namespace DCS_Nexus.Communication {
         private ConcurrentDictionary<Guid, TcpClient> connectedClients = new ConcurrentDictionary<Guid, TcpClient>();
 
         private const string serviceName = "_dcs-bios._tcp";
-        private const int servicePort = 7779;
+        private const int servicePort = TcpListenPort;
 
         private MulticastService multicast = new MulticastService();
         private ServiceProfile profile = new ServiceProfile("DCS-Nexus", serviceName, servicePort);
@@ -103,7 +102,7 @@ namespace DCS_Nexus.Communication {
         {
             Log($"Starting {GetType().Name} receive thread");
 
-            receiveClient = new TcpListener(IPAddress.Any, 7779);
+            receiveClient = new TcpListener(IPAddress.Any, servicePort);
             receiveClient.Start();
             receiveClient.BeginAcceptTcpClient(new AsyncCallback(OnClientConnected), null);
 

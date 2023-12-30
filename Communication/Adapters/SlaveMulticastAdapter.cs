@@ -3,7 +3,7 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Net;
 using Google.Protobuf;
-
+using static DCS_Nexus.Model.GlobalConstants;
 using static DCS_Nexus.Communication.CommunicationManager;
 using System.Windows;
 using DCS_Nexus.Model;
@@ -58,7 +58,7 @@ namespace DCS_Nexus.Communication {
         {
             Log($"Starting {GetType().Name} receive thread");
 
-            UdpClient client = new UdpClient(7779);
+            UdpClient client = new UdpClient(UdpListenPort);
 
             while (!stopReceiveThread)
             {
@@ -121,8 +121,7 @@ namespace DCS_Nexus.Communication {
             Log($"Starting {GetType().Name} send thread");
 
             IPAddress group = IPAddress.Parse("232.0.1.3");
-            int port = 7779;
-            IPEndPoint endPoint = new IPEndPoint(group, port);
+            IPEndPoint endPoint = new IPEndPoint(group, UdpListenPort);
 
             // Create socket
             SendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)

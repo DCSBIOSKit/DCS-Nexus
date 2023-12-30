@@ -76,10 +76,7 @@ namespace DCS_Nexus
 
             // Restart slave communications with new settings
             CommunicationManager.StopSlaves();
-            foreach (var type in Settings.Default.SlaveCommunicationTypes)
-            {
-                CommunicationManager.StartSlaves(type);
-            }
+            CommunicationManager.StartSlaves(Settings.Default.SlaveCommunicationTypes.ToArray());
         }
     }
 }

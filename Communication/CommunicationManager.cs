@@ -1,6 +1,7 @@
 using DCS_Nexus.Communication;
 using DCS_Nexus.Model;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace DCS_Nexus.Communication {
     public class CommunicationManager {
@@ -42,6 +43,7 @@ namespace DCS_Nexus.Communication {
                         break;
                     case CommunicationType.UDP:
                         // Implement UDP adapter initialization if needed
+                        throw new System.NotImplementedException();
                         break;
                     case CommunicationType.Multicast:
                         SlaveAdapters.Add(new SlaveMulticastAdapter());
@@ -75,6 +77,7 @@ namespace DCS_Nexus.Communication {
             {
                 adapter.Stop();
             }
+
             SlaveAdapters.Clear();
         }
 
