@@ -14,7 +14,7 @@ Section "DCS-Nexus Installation" SecInstall
     SetOutPath $INSTDIR
 
     ; Copy all files from the specified directory
-    File /r ".\bin\Release\net7.0-windows\win-x64\publish\*.*"
+    File /r ".\bin\Release\net8.0-windows\win-x64\publish\*.*"
 
     ; Create a shortcut in the Start menu
     CreateDirectory "$SMPROGRAMS\DCS-Nexus"

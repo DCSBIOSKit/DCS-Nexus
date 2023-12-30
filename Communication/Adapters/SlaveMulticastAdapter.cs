@@ -107,6 +107,8 @@ namespace DCS_Nexus.Communication {
 
                 // Trigger the Received event if needed
                 Received?.Invoke(receivedData);
+
+                Thread.Sleep(2);
             }
 
             client.Close();
