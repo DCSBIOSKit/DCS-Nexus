@@ -1,6 +1,7 @@
 using System.IO;
 using System.Collections.Generic; // Added for List
 using DCS_Nexus.Communication;
+using static Util.Logger;
 
 namespace DCS_Nexus
 {
@@ -33,7 +34,7 @@ namespace DCS_Nexus
         public void Save()
         {
             string json = System.Text.Json.JsonSerializer.Serialize(this);
-            File.WriteAllText("settings.json", json);
+            System.Console.WriteLine($"saved json: {json}");
         }
     }
 }

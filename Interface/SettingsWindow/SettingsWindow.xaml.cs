@@ -11,11 +11,24 @@ namespace DCS_Nexus
         public SettingsWindow()
         {
             InitializeComponent();
+            Loaded += new RoutedEventHandler(Window_Loaded);
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
             InitializeSettings();
         }
 
         private void InitializeSettings()
         {
+            // Unsubscribe from the events
+            TCPCheckBox.Checked -= SlaveMode_Checked;
+            TCPCheckBox.Unchecked -= SlaveMode_Unchecked;
+            UDPCheckBox.Checked -= SlaveMode_Checked;
+            UDPCheckBox.Unchecked -= SlaveMode_Unchecked;
+            MulticastCheckBox.Checked -= SlaveMode_Checked;
+            MulticastCheckBox.Unchecked -= SlaveMode_Unchecked;
+
             // Initialize DCS Mode ComboBox
             DCSModeComboBox.SelectedIndex = (int)Settings.Default.DCSCommunicationType;
 
@@ -23,6 +36,14 @@ namespace DCS_Nexus
             TCPCheckBox.IsChecked = Settings.Default.SlaveCommunicationTypes.Contains(CommunicationType.TCP);
             UDPCheckBox.IsChecked = Settings.Default.SlaveCommunicationTypes.Contains(CommunicationType.UDP);
             MulticastCheckBox.IsChecked = Settings.Default.SlaveCommunicationTypes.Contains(CommunicationType.Multicast);
+
+            // Re-subscribe to the events
+            TCPCheckBox.Checked += SlaveMode_Checked;
+            TCPCheckBox.Unchecked += SlaveMode_Unchecked;
+            UDPCheckBox.Checked += SlaveMode_Checked;
+            UDPCheckBox.Unchecked += SlaveMode_Unchecked;
+            MulticastCheckBox.Checked += SlaveMode_Checked;
+            MulticastCheckBox.Unchecked += SlaveMode_Unchecked;
         }
 
         private void DCSMode_SelectionChanged(object sender, SelectionChangedEventArgs e)

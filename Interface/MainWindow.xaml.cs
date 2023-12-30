@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -103,8 +104,11 @@ namespace DCS_Nexus
             }
             else
             {
-                // TODO: Read from Settings
-                CommunicationManager.Start(CommunicationType.UDP, CommunicationType.Multicast);
+                CommunicationType dcsType = Settings.Default.DCSCommunicationType;
+                List<CommunicationType> slaveTypes = Settings.Default.SlaveCommunicationTypes;
+
+                CommunicationManager.Start(dcsType, slaveTypes.ToArray());
+                
                 startStopButton.Content = "Stop";
             }
         }
